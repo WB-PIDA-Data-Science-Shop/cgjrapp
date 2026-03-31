@@ -7,3 +7,5 @@
 ^\.current_task$
 
 ^LICENSE\.md$
+^README\.Rmd$
+^\.github$

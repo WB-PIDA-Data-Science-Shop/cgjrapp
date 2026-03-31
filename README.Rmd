@@ -1,0 +1,103 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# cgjrapp
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/WB-PIDA-Data-Science-Shop/cgjrapp/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/WB-PIDA-Data-Science-Shop/cgjrapp/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/WB-PIDA-Data-Science-Shop/cgjrapp/graph/badge.svg)](https://app.codecov.io/gh/WB-PIDA-Data-Science-Shop/cgjrapp)
+<!-- badges: end -->
+
+`cgjrapp` is a Shiny dashboard that visualises governance data 
+for the institutional chapter of the World Bank's
+**Country Growth and Jobs Report (CGJR)**. It enables country-level
+benchmarking across four governance clusters and thirteen subclusters,
+drawing on indicator data from the companion
+[`cgjrdata`](https://github.com/WB-PIDA-Data-Science-Shop/cgjrdata)
+package.
+
+## Features
+
+- **Overview tab** — evolution of CTF scores over time for a selected
+  country, with peer, regional, and income-group benchmarks overlaid.
+- **Benchmarking thresholds** — switch between four modes via a sidebar
+  dropdown: relative quartiles, relative terciles, absolute quartiles,
+  and absolute terciles.
+- **Zone legend** — colour-coded weak / emerging / strong capacity zones
+  always visible in the chart legend.
+- **Interactive charts** — powered by `plotly` for hover tooltips and
+  zoom.
+
+## Prerequisites
+
+`cgjrapp` depends on the private `cgjrdata` package. Install it first:
+
+``` r
+# install.packages("pak")
+pak::pak("WB-PIDA-Data-Science-Shop/cgjrdata")
+```
+
+## Installation
+
+Install the development version of `cgjrapp` from GitHub:
+
+``` r
+pak::pak("WB-PIDA-Data-Science-Shop/cgjrapp")
+```
+
+## Usage
+
+``` r
+library(cgjrapp)
+
+run_cgjrapp()
+```
+
+This launches the Shiny dashboard in your default browser. Use the
+sidebar to select a **primary country**, optional **peer countries**,
+**region**, **income group**, **year range**, and **benchmarking
+threshold** mode.
+
+## Data
+
+All indicator data is sourced from `cgjrdata::institutional_averages_tbl`
+and related exports. The four governance clusters are:
+
+| Cluster | Subclusters |
+|---|---|
+| Institutional Environment | Degree of Integrity, Transparency & Accountability, Justice & Rule of Law, Social Cohesion |
+| Political Institutions | … |
+| Centre of Government | … |
+| Sectors & Service Delivery | … |
+
+## Development
+
+``` r
+# Load all functions without installing
+devtools::load_all()
+
+# Run tests
+devtools::test()
+
+# Full R CMD check
+devtools::check()
+
+# Rebuild README
+devtools::build_readme()
+```
+
+## License
+
+MIT © World Bank DICE Data Science Shop
