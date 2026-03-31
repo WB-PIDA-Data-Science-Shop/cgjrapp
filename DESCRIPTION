@@ -1,11 +1,32 @@
 Package: cgjrapp
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Title: Country Growth and Jobs Report Institutional Dashboard
+Version: 0.1.0
+Authors@R:
+    person("World Bank PIDA Data Science Shop", role = c("aut", "cre"),
+           email = "pida@worldbank.org")
+Description: A Shiny dashboard that visualises Closeness-to-Frontier (CTF)
+    governance indicator data from the 'cgjrdata' package. The app supplements
+    the institutional chapter of the Country Growth and Jobs Report (CGJR)
+    guidance note, enabling country-level benchmarking across four governance
+    clusters and thirteen subclusters.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Imports:
+    bslib (>= 0.9.0),
+    cgjrdata,
+    cli,
+    dplyr,
+    ggplot2,
+    plotly,
+    purrr,
+    shiny (>= 1.8.0),
+    stats,
+    thematic
+Suggests:
+    devtools,
+    testthat (>= 3.0.0),
+    tibble,
+    withr
+Config/testthat/edition: 3

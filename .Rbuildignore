@@ -1,2 +1,9 @@
+^renv$
+^renv\.lock$
 ^cgjrapp\.Rproj$
 ^\.Rproj\.user$
+^prompts$
+^copilot_logs$
+^\.current_task$
+
+^LICENSE\.md$
