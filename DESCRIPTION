@@ -23,7 +23,8 @@ Imports:
     purrr,
     shiny (>= 1.8.0),
     stats,
-    thematic
+    thematic,
+    tidyr
 Suggests:
     devtools,
     testthat (>= 3.0.0),

@@ -2,19 +2,19 @@
 % Please edit documentation in R/utils_plotting.R
 \name{.get_zone_params}
 \alias{.get_zone_params}
-\title{Return zone thresholds and labels for a given zone_type}
+\title{Return zone thresholds and labels for absolute threshold modes}
 \usage{
-.get_zone_params(zone_type = c("default", "tercile"))
+.get_zone_params(threshold_mode = c("abs_quartile", "abs_tercile"))
 }
 \arguments{
-\item{zone_type}{\code{"default"} (0.25 / 0.50 breaks) or \code{"tercile"} (1/3 / 2/3
-breaks).}
+\item{threshold_mode}{One of \code{"abs_quartile"} (0.25 / 0.50) or
+\code{"abs_tercile"} (1/3 / 2/3).}
 }
 \value{
-A named list: \code{q1}, \code{q2}, \code{labels} (length-3 character), \code{breaks},
-\code{break_labels}, \code{fill_values} (named colour vector).
+A named list: \code{q1}, \code{q2}, \code{labels}, \code{breaks}, \code{break_labels},
+\code{fill_values}.
 }
 \description{
-Return zone thresholds and labels for a given zone_type
+Return zone thresholds and labels for absolute threshold modes
 }
 \keyword{internal}

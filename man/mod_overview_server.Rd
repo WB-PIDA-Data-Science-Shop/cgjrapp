@@ -10,7 +10,8 @@ mod_overview_server(
   peer_isos,
   region_codes,
   income_groups,
-  year_range
+  year_range,
+  threshold_mode
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ mod_overview_server(
 \item{income_groups}{Reactive character vector -- selected income groups.}
 
 \item{year_range}{Reactive integer vector of length 2.}
+
+\item{threshold_mode}{Reactive string -- one of \code{"abs_quartile"},
+\code{"abs_tercile"}, \code{"rel_quartile"}, \code{"rel_tercile"}.}
 }
 \description{
 Overview tab server

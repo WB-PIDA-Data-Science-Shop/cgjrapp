@@ -9,7 +9,8 @@ plot_cgjr_master(
   y_var,
   primary_iso,
   year_range,
-  zone_type = c("default", "tercile")
+  threshold_mode = c("abs_quartile", "abs_tercile", "rel_quartile", "rel_tercile"),
+  thresholds = NULL
 )
 }
 \arguments{
@@ -26,9 +27,16 @@ and \code{group_code}.}
 
 \item{year_range}{Integer vector of length 2: \code{c(min, max)}.}
 
-\item{zone_type}{Character. Either \code{"default"} (0.25 / 0.50 cutoffs, the
-CLIAR standard) or \code{"tercile"} (1/3 / 2/3 cutoffs). Defaults to
-\code{"default"}.}
+\item{threshold_mode}{Character. One of:
+\itemize{
+\item \code{"abs_quartile"} — fixed 0.25 / 0.50 cutoffs (default).
+\item \code{"abs_tercile"}  — fixed 1/3 / 2/3 cutoffs.
+\item \code{"rel_quartile"} — annual 25th / 50th percentile from \code{ref_data}.
+\item \code{"rel_tercile"}  — annual 33rd / 67th percentile from \code{ref_data}.
+}}
+
+\item{thresholds}{A tibble from \code{\link[=get_annual_thresholds]{get_annual_thresholds()}} with columns
+\code{year}, \code{q1}, \code{q2}. Required for relative modes; \code{NULL} for absolute.}
 }
 \value{
 A \code{ggplot} object. Never \code{NULL}.
