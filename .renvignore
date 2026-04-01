@@ -1,0 +1,2 @@
+# Exclude files that cause renv dependency discovery issues
+README.Rmd
