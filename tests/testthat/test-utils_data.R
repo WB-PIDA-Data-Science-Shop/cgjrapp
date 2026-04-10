@@ -245,6 +245,101 @@ test_that("get_annual_thresholds works on real cgjrdata", {
   expect_true(all(result$q1 < result$q2))
 })
 
+# ── get_cluster_member_data() ─────────────────────────────────────────────────
+
+test_that("get_cluster_member_data returns empty tibble when no groups selected", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = character(0),
+    income_groups = character(0),
+    year_range    = YEAR_RANGE
+  )
+  expect_equal(nrow(result), 0L)
+  expect_true(all(c("country_code", "country_name", "year", "score",
+                    "group_label", "group_code", "country_type") %in% names(result)))
+})
+
+test_that("get_cluster_member_data returns rows for selected region", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = c("AFE"),
+    income_groups = character(0),
+    year_range    = YEAR_RANGE
+  )
+  expect_gt(nrow(result), 0L)
+  expect_true(all(result$country_type == "region"))
+  expect_true(all(result$year >= YEAR_RANGE[[1]] & result$year <= YEAR_RANGE[[2]]))
+})
+
+test_that("get_cluster_member_data returns rows for selected income group", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = character(0),
+    income_groups = c("Low income"),
+    year_range    = YEAR_RANGE
+  )
+  expect_gt(nrow(result), 0L)
+  expect_true(all(result$country_type == "income"))
+  expect_true(all(result$group_label == "Low income"))
+})
+
+test_that("get_cluster_member_data combines region and income rows", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = c("AFE"),
+    income_groups = c("Low income"),
+    year_range    = YEAR_RANGE
+  )
+  expect_true("region" %in% result$country_type)
+  expect_true("income" %in% result$country_type)
+})
+
+test_that("get_cluster_member_data output contains required columns", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = c("AFE"),
+    income_groups = character(0),
+    year_range    = YEAR_RANGE
+  )
+  expected_cols <- c("country_code", "country_name", "year", "score",
+                     "group_label", "group_code", "country_type")
+  expect_true(all(expected_cols %in% names(result)))
+})
+
+test_that("get_cluster_member_data respects year_range filter", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = c("AFE"),
+    income_groups = character(0),
+    year_range    = c(2018L, 2018L)
+  )
+  expect_true(all(result$year == 2018L))
+})
+
+test_that("get_cluster_member_data has no NA scores", {
+  result <- get_cluster_member_data(
+    cluster       = CLUSTER,
+    subcluster    = SUBCLUSTER,
+    score_var     = "score",
+    region_codes  = c("AFE"),
+    income_groups = character(0),
+    year_range    = YEAR_RANGE
+  )
+  expect_false(anyNA(result$score))
+})
+
 # ── get_indicator_choices() ───────────────────────────────────────────────────
 
 test_that("get_indicator_choices excludes standard structural columns", {

@@ -14,7 +14,8 @@ make_reactives <- function(
     region_codes  = character(0),
     income_groups = character(0),
     year_range    = c(2013L, 2024L),
-    threshold_mode = "abs_quartile"
+    threshold_mode = "abs_quartile",
+    show_members   = FALSE
 ) {
   list(
     primary_iso    = shiny::reactive(primary_iso),
@@ -22,7 +23,8 @@ make_reactives <- function(
     region_codes   = shiny::reactive(region_codes),
     income_groups  = shiny::reactive(income_groups),
     year_range     = shiny::reactive(year_range),
-    threshold_mode = shiny::reactive(threshold_mode)
+    threshold_mode = shiny::reactive(threshold_mode),
+    show_members   = shiny::reactive(show_members)
   )
 }
 

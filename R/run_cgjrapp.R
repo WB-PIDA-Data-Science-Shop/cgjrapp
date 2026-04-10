@@ -64,7 +64,11 @@ run_cgjrapp <- function(...) {
       options  = list(placeholder = "Select income groups...")
     ),
 
-    shiny::hr(),
+    shiny::checkboxInput(
+      inputId = "show_members",
+      label   = "Show individual countries",
+      value   = FALSE
+    ),
 
     shiny::sliderInput(
       inputId = "year_range",
@@ -114,12 +118,13 @@ run_cgjrapp <- function(...) {
   server <- function(input, output, session) {
 
     # Shared reactive wrappers — passed by reference to all modules
-    r_primary_iso   <- shiny::reactive(input$primary_iso)
-    r_peer_isos     <- shiny::reactive(input$peer_isos %||% character(0))
-    r_region_codes  <- shiny::reactive(input$region_codes %||% character(0))
-    r_income_groups <- shiny::reactive(input$income_groups %||% character(0))
-    r_year_range    <- shiny::reactive(input$year_range)
+    r_primary_iso    <- shiny::reactive(input$primary_iso)
+    r_peer_isos      <- shiny::reactive(input$peer_isos %||% character(0))
+    r_region_codes   <- shiny::reactive(input$region_codes %||% character(0))
+    r_income_groups  <- shiny::reactive(input$income_groups %||% character(0))
+    r_year_range     <- shiny::reactive(input$year_range)
     r_threshold_mode <- shiny::reactive(input$threshold_mode)
+    r_show_members   <- shiny::reactive(isTRUE(input$show_members))
 
     mod_welcome_server("welcome")
 
@@ -130,7 +135,8 @@ run_cgjrapp <- function(...) {
       region_codes   = r_region_codes,
       income_groups  = r_income_groups,
       year_range     = r_year_range,
-      threshold_mode = r_threshold_mode
+      threshold_mode = r_threshold_mode,
+      show_members   = r_show_members
     )
   }
 

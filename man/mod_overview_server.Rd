@@ -11,7 +11,8 @@ mod_overview_server(
   region_codes,
   income_groups,
   year_range,
-  threshold_mode
+  threshold_mode,
+  show_members
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ mod_overview_server(
 
 \item{threshold_mode}{Reactive string -- one of \code{"abs_quartile"},
 \code{"abs_tercile"}, \code{"rel_quartile"}, \code{"rel_tercile"}.}
+
+\item{show_members}{Reactive logical -- whether to show individual member
+country dots behind group benchmark medians.}
 }
 \description{
 Overview tab server

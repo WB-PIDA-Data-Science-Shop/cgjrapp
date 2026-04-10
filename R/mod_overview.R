@@ -49,7 +49,17 @@ mod_overview_ui <- function(id, sidebar) {
           function(var, label) {
             bslib::nav_panel(
               title = label,
-              plotly::plotlyOutput(ns(paste0("plot_", var)), height = "380px")
+              # Plot / Data sub-tabs for each cluster
+              bslib::navset_tab(
+                bslib::nav_panel(
+                  title = shiny::tagList(shiny::icon("chart-line"), " Plot"),
+                  plotly::plotlyOutput(ns(paste0("plot_", var)), height = "380px")
+                ),
+                bslib::nav_panel(
+                  title = shiny::tagList(shiny::icon("table"), " Data"),
+                  DT::DTOutput(ns(paste0("tbl_", var)))
+                )
+              )
             )
           }
         ))
@@ -70,10 +80,13 @@ mod_overview_ui <- function(id, sidebar) {
 #' @param year_range Reactive integer vector of length 2.
 #' @param threshold_mode Reactive string -- one of `"abs_quartile"`,
 #'   `"abs_tercile"`, `"rel_quartile"`, `"rel_tercile"`.
+#' @param show_members Reactive logical -- whether to show individual member
+#'   country dots behind group benchmark medians.
 #' @export
 mod_overview_server <- function(id, primary_iso, peer_isos,
                                 region_codes, income_groups,
-                                year_range, threshold_mode) {
+                                year_range, threshold_mode,
+                                show_members) {
   shiny::moduleServer(id, function(input, output, session) {
 
     # Reactive: filtered country + peer rows from institutional_averages_tbl
@@ -100,14 +113,29 @@ mod_overview_server <- function(id, primary_iso, peer_isos,
       agg
     }
 
+    # Helper: member-country data for a given cluster / score var
+    member_data_for <- function(cluster_key, var_name) {
+      has_groups <- length(region_codes()) > 0L || length(income_groups()) > 0L
+      if (!isTRUE(show_members()) || !has_groups) return(NULL)
+      get_cluster_member_data(
+        cluster       = cluster_key,
+        subcluster    = names(cgjrdata::ctfdata_list[[cluster_key]])[[1]],
+        score_var     = var_name,
+        region_codes  = region_codes(),
+        income_groups = income_groups(),
+        year_range    = year_range()
+      )
+    }
+
     # Helper: render one cluster plot
     # data     = filtered tibble to plot (country + peers + aggregates).
     #            NULL → built internally from overview_data() + agg_rows_for().
     # ref_data = full global tibble for computing relative thresholds.
     #            NULL → defaults to institutional_averages_tbl (overview standard).
     render_cluster_plot <- function(y_var, cluster_key,
-                                    data     = NULL,
-                                    ref_data = NULL) {
+                                    data        = NULL,
+                                    ref_data    = NULL,
+                                    member_data = NULL) {
       if (is.null(data)) {
         agg_data <- agg_rows_for(cluster_key, y_var)
         data     <- dplyr::bind_rows(overview_data(), agg_data)
@@ -137,7 +165,9 @@ mod_overview_server <- function(id, primary_iso, peer_isos,
         primary_iso    = primary_iso(),
         year_range     = year_range(),
         threshold_mode = mode,
-        thresholds     = thresholds
+        thresholds     = thresholds,
+        show_members   = isTRUE(show_members()),
+        member_data    = member_data
       )
 
       pl <- plotly::ggplotly(p, tooltip = "text")
@@ -154,20 +184,66 @@ mod_overview_server <- function(id, primary_iso, peer_isos,
       pl |> plotly::layout(legend = list(orientation = "h", y = -0.2))
     }
 
+    # Helper: build display-ready tibble for the data table (wide format)
+    table_data_for <- function(cluster_key, var_name) {
+      agg_data <- agg_rows_for(cluster_key, var_name)
+      country_data <- overview_data()
+      dplyr::bind_rows(country_data, agg_data) |>
+        dplyr::select(
+          dplyr::any_of(c("country_name", "group_label", "year", var_name, "score"))
+        ) |>
+        dplyr::mutate(
+          Name  = dplyr::coalesce(country_name, group_label),
+          Year  = year,
+          Score = round(
+            dplyr::coalesce(
+              .data[[var_name]],
+              if ("score" %in% names(.data)) .data[["score"]] else NA_real_
+            ), 3)
+        ) |>
+        dplyr::select(Name, Year, Score) |>
+        dplyr::arrange(Name, Year) |>
+        tidyr::pivot_wider(names_from = Name, values_from = Score) |>
+        dplyr::arrange(Year)
+    }
+
     # Outputs
     purrr::iwalk(OVERVIEW_CLUSTER_VARS, function(var, label) {
       cluster_key <- names(cgjrdata::ctfdata_list)[
         which(OVERVIEW_CLUSTER_VARS == var)
       ]
       local({
-        v  <- var
-        ck <- cluster_key
-        out_id <- paste0("plot_", v)
-        output[[out_id]] <- plotly::renderPlotly({
-          render_cluster_plot(v, cluster_key = ck)
+        v   <- var
+        ck  <- cluster_key
+        lbl <- label
+        plot_id <- paste0("plot_", v)
+        tbl_id  <- paste0("tbl_",  v)
+
+        output[[plot_id]] <- plotly::renderPlotly({
+          render_cluster_plot(v, cluster_key = ck,
+                              member_data = member_data_for(ck, v))
         })
-        # Render even when the tab is not the active pill
-        shiny::outputOptions(output, out_id, suspendWhenHidden = FALSE)
+        shiny::outputOptions(output, plot_id, suspendWhenHidden = FALSE)
+
+        output[[tbl_id]] <- DT::renderDT({
+          DT::datatable(
+            table_data_for(ck, v),
+            caption    = lbl,
+            rownames   = FALSE,
+            extensions = "Buttons",
+            options    = list(
+              dom        = "Bfrtip",
+              buttons    = list(
+                list(extend = "csv",   filename = paste0("cgjr_", ck)),
+                list(extend = "excel", filename = paste0("cgjr_", ck)),
+                "copy"
+              ),
+              pageLength = 20,
+              scrollX    = TRUE
+            )
+          )
+        })
+        shiny::outputOptions(output, tbl_id, suspendWhenHidden = FALSE)
       })
     })
   })

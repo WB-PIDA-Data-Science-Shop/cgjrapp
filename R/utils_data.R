@@ -122,6 +122,113 @@ get_aggregate_data <- function(cluster, subcluster, region_codes,
   dplyr::bind_rows(region_rows, income_rows)
 }
 
+# ── Individual member-country data ────────────────────────────────────────────
+
+#' Get individual country rows belonging to selected benchmark groups
+#'
+#' Returns country-level rows from a subcluster tibble for every country that
+#' belongs to one of the selected `region_codes` or `income_groups`, filtered
+#' to the given `year_range`. Intended for overlaying individual dots behind
+#' group-median benchmark lines.
+#'
+#' @param cluster Character. Top-level key from `names(cgjrdata::ctfdata_list)`.
+#' @param subcluster Character. Second-level key.
+#' @param score_var Character. Name of the score column to keep. For overview
+#'   cluster-score plots pass the cluster score column name (e.g.
+#'   `"institutional_environment_score"`); for subcluster indicator plots pass
+#'   the indicator column name.
+#' @param region_codes Character vector of region codes. Use `character(0)` to
+#'   include none.
+#' @param income_groups Character vector of income group labels. Use
+#'   `character(0)` to include none.
+#' @param year_range Integer vector of length 2: `c(min_year, max_year)`.
+#'
+#' @return A tibble with columns `country_code`, `country_name`, `year`,
+#'   `score` (renamed from `score_var`), `group_label`, `group_code`,
+#'   `country_type` (`"region"` or `"income"`). Returns a zero-row tibble with
+#'   those columns when no groups are selected or no rows match.
+#'
+#' @export
+get_cluster_member_data <- function(cluster, subcluster, score_var,
+                                    region_codes, income_groups,
+                                    year_range) {
+  empty_result <- tibble::tibble(
+    country_code = character(),
+    country_name = character(),
+    year         = integer(),
+    score        = double(),
+    group_label  = character(),
+    group_code   = character(),
+    country_type = character()
+  )
+
+  if (length(region_codes) == 0L && length(income_groups) == 0L) {
+    return(empty_result)
+  }
+
+  # Country-level subcluster data (has country_code, country_name, year, score_var)
+  sub_tbl <- cgjrdata::ctfdata_list[[cluster]][[subcluster]]
+
+  if (!score_var %in% names(sub_tbl)) {
+    # score_var may be a cluster-level column not present in subcluster tibble;
+    # fall back to the generic "score" column if available
+    if ("score" %in% names(sub_tbl)) {
+      score_var <- "score"
+    } else {
+      cli::cli_abort(
+        "{.arg score_var} ({.val {score_var}}) is not a column in the \\
+        subcluster tibble and no {.field score} fallback exists."
+      )
+    }
+  }
+
+  # WB country metadata for group membership
+  wbc <- cgjrdata::wbcountries |>
+    dplyr::select(country_code, region_code, region, income_group)
+
+  # Filter subcluster data to year range
+  sub_filtered <- sub_tbl |>
+    dplyr::filter(year >= year_range[[1]], year <= year_range[[2]]) |>
+    dplyr::select(dplyr::all_of(c("country_code", "country_name", "year", score_var))) |>
+    dplyr::rename(score = dplyr::all_of(score_var)) |>
+    dplyr::left_join(wbc, by = "country_code")
+
+  region_rows <- if (length(region_codes) > 0L) {
+    sub_filtered |>
+      dplyr::filter(region_code %in% region_codes) |>
+      dplyr::transmute(
+        country_code,
+        country_name,
+        year,
+        score,
+        group_label  = region,
+        group_code   = region_code,
+        country_type = "region"
+      )
+  } else {
+    empty_result
+  }
+
+  income_rows <- if (length(income_groups) > 0L) {
+    sub_filtered |>
+      dplyr::filter(income_group %in% income_groups) |>
+      dplyr::transmute(
+        country_code,
+        country_name,
+        year,
+        score,
+        group_label  = income_group,
+        group_code   = income_group,
+        country_type = "income"
+      )
+  } else {
+    empty_result
+  }
+
+  dplyr::bind_rows(region_rows, income_rows) |>
+    tidyr::drop_na(score)
+}
+
 # ── Distributional threshold helpers ──────────────────────────────────────────
 
 #' Compute annual quantile thresholds from a reference dataset

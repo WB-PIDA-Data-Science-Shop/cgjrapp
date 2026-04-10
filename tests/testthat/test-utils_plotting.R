@@ -327,3 +327,48 @@ test_that("plot_cgjr_master works end-to-end with real cgjrdata", {
     plot_cgjr_master(combined, "score", "KEN", c(2015L, 2024L))
   )
 })
+
+# ── show_members argument ─────────────────────────────────────────────────────
+
+test_that("plot_cgjr_master accepts show_members = FALSE without error", {
+  expect_no_error(
+    plot_cgjr_master(make_plot_data(), "score", "KEN", YEAR_RANGE,
+                     show_members = FALSE)
+  )
+})
+
+test_that("plot_cgjr_master with show_members = TRUE and NULL member_data does not error", {
+  expect_no_error(
+    plot_cgjr_master(make_plot_data(), "score", "KEN", YEAR_RANGE,
+                     show_members = TRUE, member_data = NULL)
+  )
+})
+
+test_that("plot_cgjr_master with show_members = TRUE adds a GeomPoint layer for members", {
+  member_tbl <- tibble::tibble(
+    country_code = c("ETH", "UGA"),
+    country_name = c("Ethiopia", "Uganda"),
+    year         = c(2015L, 2015L),
+    score        = c(0.31, 0.42),
+    group_label  = c("Sub-Saharan Africa", "Sub-Saharan Africa"),
+    group_code   = c("SSA", "SSA"),
+    country_type = c("region", "region")
+  )
+  p <- plot_cgjr_master(make_plot_data(), "score", "KEN", YEAR_RANGE,
+                        show_members = TRUE, member_data = member_tbl)
+  layer_classes <- purrr::map_chr(p$layers, \(l) class(l$geom)[1])
+  expect_true("GeomPoint" %in% layer_classes)
+})
+
+test_that("plot_cgjr_master with show_members = TRUE and zero-row member_data does not error", {
+  empty_members <- tibble::tibble(
+    country_code = character(), country_name = character(),
+    year = integer(), score = double(),
+    group_label = character(), group_code = character(),
+    country_type = character()
+  )
+  expect_no_error(
+    plot_cgjr_master(make_plot_data(), "score", "KEN", YEAR_RANGE,
+                     show_members = TRUE, member_data = empty_members)
+  )
+})

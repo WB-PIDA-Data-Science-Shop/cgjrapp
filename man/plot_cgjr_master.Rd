@@ -10,7 +10,9 @@ plot_cgjr_master(
   primary_iso,
   year_range,
   threshold_mode = c("abs_quartile", "abs_tercile", "rel_quartile", "rel_tercile"),
-  thresholds = NULL
+  thresholds = NULL,
+  show_members = FALSE,
+  member_data = NULL
 )
 }
 \arguments{
@@ -37,6 +39,14 @@ and \code{group_code}.}
 
 \item{thresholds}{A tibble from \code{\link[=get_annual_thresholds]{get_annual_thresholds()}} with columns
 \code{year}, \code{q1}, \code{q2}. Required for relative modes; \code{NULL} for absolute.}
+
+\item{show_members}{Logical. When \code{TRUE} and \code{member_data} is supplied,
+overlays individual member-country dots behind benchmark group medians.
+Defaults to \code{FALSE}.}
+
+\item{member_data}{A tibble from \code{\link[=get_cluster_member_data]{get_cluster_member_data()}} with columns
+\code{country_name}, \code{year}, \code{score}, \code{group_label}, \code{country_type}. Only
+used when \code{show_members = TRUE}.}
 }
 \value{
 A \code{ggplot} object. Never \code{NULL}.

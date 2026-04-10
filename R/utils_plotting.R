@@ -187,6 +187,12 @@ get_zone_labels <- function(x_pos = Inf) {
 #'   * `"rel_tercile"`  — annual 33rd / 67th percentile from `ref_data`.
 #' @param thresholds A tibble from [get_annual_thresholds()] with columns
 #'   `year`, `q1`, `q2`. Required for relative modes; `NULL` for absolute.
+#' @param show_members Logical. When `TRUE` and `member_data` is supplied,
+#'   overlays individual member-country dots behind benchmark group medians.
+#'   Defaults to `FALSE`.
+#' @param member_data A tibble from [get_cluster_member_data()] with columns
+#'   `country_name`, `year`, `score`, `group_label`, `country_type`. Only
+#'   used when `show_members = TRUE`.
 #'
 #' @return A `ggplot` object. Never `NULL`.
 #'
@@ -194,7 +200,9 @@ get_zone_labels <- function(x_pos = Inf) {
 plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
                              threshold_mode = c("abs_quartile", "abs_tercile",
                                                "rel_quartile", "rel_tercile"),
-                             thresholds = NULL) {
+                             thresholds   = NULL,
+                             show_members = FALSE,
+                             member_data  = NULL) {
   threshold_mode <- match.arg(threshold_mode)
 
   if (threshold_mode %in% c("rel_quartile", "rel_tercile") &&
@@ -245,7 +253,9 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
   # --- Build and return -------------------------------------------------------
   suppressWarnings(
     .plot_evolution(data, y_var, primary_iso, year_range,
-                    threshold_mode, thresholds)
+                    threshold_mode, thresholds,
+                    show_members = show_members,
+                    member_data  = member_data)
   )
 }
 
@@ -254,7 +264,9 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
 #' @keywords internal
 .plot_evolution <- function(data, y_var, primary_iso, year_range,
                             threshold_mode = "abs_quartile",
-                            thresholds = NULL) {
+                            thresholds   = NULL,
+                            show_members = FALSE,
+                            member_data  = NULL) {
 
   is_relative <- startsWith(threshold_mode, "rel")
 
@@ -333,6 +345,42 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
       alpha   = 0.30,
       colour  = NA
     )
+
+  # ── Member-country dots: individual countries behind group medians ───────────
+  # Rendered only when show_members=TRUE and member_data has rows.
+  # Small (size 1.5) semi-transparent circles, coloured by country_type,
+  # interactive tooltip with country name + year + score.
+  if (isTRUE(show_members) && !is.null(member_data) && nrow(member_data) > 0) {
+    member_data <- member_data |>
+      dplyr::filter(
+        year >= year_range[[1]],
+        year <= year_range[[2]]
+      ) |>
+      dplyr::mutate(
+        member_text = paste0(
+          "Country: ", country_name, "<br>",
+          "Group: ",   group_label,  "<br>",
+          "Year: ",    year,         "<br>",
+          "CTF: ",     round(score,  3)
+        )
+      )
+
+    if (nrow(member_data) > 0) {
+      p <- p +
+        ggplot2::geom_point(
+          data    = member_data,
+          mapping = ggplot2::aes(
+            x    = year,
+            y    = score,
+            text = member_text
+          ),
+          shape  = 16,
+          size   = 1.2,
+          alpha  = 0.30,
+          colour = "#555555"
+        )
+    }
+  }
 
   # ── Benchmark group medians: hollow shapes, one shape per group ─────────────
   if (nrow(bench_data) > 0) {

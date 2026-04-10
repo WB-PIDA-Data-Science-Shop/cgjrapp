@@ -70,5 +70,15 @@ utils::globalVariables(c(
   "ymax_1",
   "zone",
   "ymin",
-  "ymax"
+  "ymax",
+
+  # --- Feature: individual member-country dots ---
+  "member_country_name",
+  "member_text",
+  "show_members",
+
+  # - mod_overview_server globals
+  "Name",
+  "Score",
+  "Year"
 ))
