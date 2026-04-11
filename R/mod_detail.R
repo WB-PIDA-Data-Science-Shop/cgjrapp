@@ -52,23 +52,29 @@ mod_detail_ui <- function(id, cluster_key) {
         )
       )
     } else {
-      # ── Plot outputs: one per indicator, stacked ────────────────────────────
+      # ── Plot outputs: 2-column grid, one per indicator ───────────────────
       plot_outputs <- purrr::map(indicators, function(ind) {
         output_id <- ns(paste0("plot_", cluster_key, "__", sub_key, "__", ind))
         shiny::div(
-          class = "mb-4",
           shiny::tags$h6(
             class = "text-muted mb-1",
             style = "font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;",
             .indicator_display_label(ind)
           ),
-          plotly::plotlyOutput(output_id, height = "320px")
+          plotly::plotlyOutput(output_id, height = "300px")
         )
       })
 
       bslib::nav_panel(
         title = sub_title,
-        shiny::div(class = "pt-3", !!!plot_outputs)
+        shiny::div(
+          class = "pt-3",
+          bslib::layout_column_wrap(
+            width  = 1 / 2,
+            gap    = "1rem",
+            !!!plot_outputs
+          )
+        )
       )
     }
   })
@@ -140,7 +146,9 @@ mod_detail_server <- function(id, cluster_key,
     }
 
     # ── Shared helper: render one indicator plot ────────────────────────────
-    render_indicator_plot <- function(sub_key, ind) {
+    # agg_data is passed in from the per-subcluster reactive memo so it is
+    # only computed once per subcluster, not once per indicator.
+    render_indicator_plot <- function(sub_key, ind, agg_data = NULL) {
       sub_tbl <- cgjrdata::ctfdata_list[[cluster_key]][[sub_key]]
 
       country_data <- filter_country_data(
@@ -150,7 +158,7 @@ mod_detail_server <- function(id, cluster_key,
         year_range  = year_range()
       )
 
-      agg_data <- agg_rows_for(sub_key)
+      if (is.null(agg_data)) agg_data <- agg_rows_for(sub_key)
       # Rename agg `score` to ind so plot_cgjr_master finds y_var
       if (nrow(agg_data) > 0 && "score" %in% names(agg_data)) {
         agg_data <- dplyr::rename(agg_data, !!ind := score)
@@ -198,15 +206,28 @@ mod_detail_server <- function(id, cluster_key,
     purrr::iwalk(cluster, function(sub_tbl, sub_key) {
       indicators <- setdiff(names(sub_tbl), .DETAIL_SKIP_COLS)
 
-      # -- Plot outputs: one per indicator ------------------------------------
-      purrr::walk(indicators, function(ind) {
-        local({
-          sk  <- sub_key
-          iv  <- ind
-          oid <- paste0("plot_", cluster_key, "__", sk, "__", iv)
+      # Shared reactive memo: aggregate rows computed once per subcluster,
+      # not once per indicator.  Invalidates only when filter inputs change.
+      local({
+        sk <- sub_key
+        r_agg <- shiny::reactive({
+          agg_rows_for(sk)
+        })
 
-          output[[oid]] <- plotly::renderPlotly({
-            render_indicator_plot(sk, iv)
+        # -- Plot outputs: one per indicator ----------------------------------
+        purrr::walk(indicators, function(ind) {
+          local({
+            iv  <- ind
+            oid <- paste0("plot_", cluster_key, "__", sk, "__", iv)
+
+            output[[oid]] <- plotly::renderPlotly({
+              render_indicator_plot(sk, iv, r_agg())
+            }) |>
+              shiny::bindCache(
+                primary_iso(), peer_isos(), region_codes(), income_groups(),
+                year_range(), threshold_mode(), show_members(),
+                cluster_key, sk, iv
+              )
           })
         })
       })

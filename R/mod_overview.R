@@ -182,7 +182,11 @@ mod_overview_server <- function(id, primary_iso, peer_isos,
         output[[plot_id]] <- plotly::renderPlotly({
           render_cluster_plot(v, cluster_key = ck,
                               member_data = member_data_for(ck, v))
-        })
+        }) |>
+          shiny::bindCache(
+            primary_iso(), peer_isos(), region_codes(), income_groups(),
+            year_range(), threshold_mode(), show_members(), ck
+          )
       })
     })
   })

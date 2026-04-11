@@ -131,12 +131,12 @@ run_cgjrapp <- function(...) {
   server <- function(input, output, session) {
 
     # Shared reactive wrappers — passed by reference to all modules
-    r_primary_iso    <- shiny::reactive(input$primary_iso)
-    r_peer_isos      <- shiny::reactive(input$peer_isos %||% character(0))
-    r_region_codes   <- shiny::reactive(input$region_codes %||% character(0))
-    r_income_groups  <- shiny::reactive(input$income_groups %||% character(0))
+    r_primary_iso    <- shiny::debounce(shiny::reactive(input$primary_iso), 400)
+    r_peer_isos      <- shiny::debounce(shiny::reactive(input$peer_isos %||% character(0)), 400)
+    r_region_codes   <- shiny::debounce(shiny::reactive(input$region_codes %||% character(0)), 400)
+    r_income_groups  <- shiny::debounce(shiny::reactive(input$income_groups %||% character(0)), 400)
     r_year_range     <- shiny::debounce(shiny::reactive(input$year_range), 600)
-    r_threshold_mode <- shiny::reactive(input$threshold_mode)
+    r_threshold_mode <- shiny::debounce(shiny::reactive(input$threshold_mode), 400)
     r_show_members   <- shiny::reactive(isTRUE(input$show_members))
 
     # Hide sidebar on the Welcome tab; show it on all data tabs

@@ -321,8 +321,8 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
     dplyr::distinct(year, q1, q2) |>
     tidyr::drop_na(year, q1, q2) |>
     dplyr::mutate(
-      xmin   = year - 0.45,
-      xmax   = year + 0.45,
+      xmin   = year - 0.15,
+      xmax   = year + 0.15,
       ymin_0 = 0,
       ymax_1 = 1
     )
