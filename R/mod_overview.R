@@ -23,10 +23,9 @@ CLUSTER_COLOURS <- c(
 #' Overview tab UI
 #'
 #' @param id Module namespace ID.
-#' @param sidebar A [bslib::sidebar()] object to embed in this tab.
 #' @return A [bslib::nav_panel()] containing the overview dashboard.
 #' @export
-mod_overview_ui <- function(id, sidebar) {
+mod_overview_ui <- function(id) {
   ns <- shiny::NS(id)
 
   bslib::nav_panel(
@@ -34,37 +33,23 @@ mod_overview_ui <- function(id, sidebar) {
     icon  = shiny::icon("chart-line"),
     value = "overview",
 
-    bslib::layout_sidebar(
-      sidebar = sidebar,
-
-      # Tabbed cluster score plots -- one tab per cluster
-      shiny::tags$h5(
-        class = "mb-3",
-        style = "font-weight:600;",
-        "Institutional Dimensions of the CGJR"
-      ),
+    # Tabbed cluster score plots -- one tab per cluster
+    shiny::tags$h5(
+      class = "mb-3",
+      style = "font-weight:600;",
+      "Institutional Dimensions of the CGJR"
+    ),
       bslib::navset_card_pill(
         !!!unname(purrr::imap(
           OVERVIEW_CLUSTER_VARS,
           function(var, label) {
             bslib::nav_panel(
               title = label,
-              # Plot / Data sub-tabs for each cluster
-              bslib::navset_tab(
-                bslib::nav_panel(
-                  title = shiny::tagList(shiny::icon("chart-line"), " Plot"),
-                  plotly::plotlyOutput(ns(paste0("plot_", var)), height = "380px")
-                ),
-                bslib::nav_panel(
-                  title = shiny::tagList(shiny::icon("table"), " Data"),
-                  DT::DTOutput(ns(paste0("tbl_", var)))
-                )
-              )
+              plotly::plotlyOutput(ns(paste0("plot_", var)), height = "380px")
             )
           }
         ))
       )
-    )
   )
 }
 
@@ -184,29 +169,6 @@ mod_overview_server <- function(id, primary_iso, peer_isos,
       pl |> plotly::layout(legend = list(orientation = "h", y = -0.2))
     }
 
-    # Helper: build display-ready tibble for the data table (wide format)
-    table_data_for <- function(cluster_key, var_name) {
-      agg_data <- agg_rows_for(cluster_key, var_name)
-      country_data <- overview_data()
-      dplyr::bind_rows(country_data, agg_data) |>
-        dplyr::select(
-          dplyr::any_of(c("country_name", "group_label", "year", var_name, "score"))
-        ) |>
-        dplyr::mutate(
-          Name  = dplyr::coalesce(country_name, group_label),
-          Year  = year,
-          Score = round(
-            dplyr::coalesce(
-              .data[[var_name]],
-              if ("score" %in% names(.data)) .data[["score"]] else NA_real_
-            ), 3)
-        ) |>
-        dplyr::select(Name, Year, Score) |>
-        dplyr::arrange(Name, Year) |>
-        tidyr::pivot_wider(names_from = Name, values_from = Score) |>
-        dplyr::arrange(Year)
-    }
-
     # Outputs
     purrr::iwalk(OVERVIEW_CLUSTER_VARS, function(var, label) {
       cluster_key <- names(cgjrdata::ctfdata_list)[
@@ -215,35 +177,12 @@ mod_overview_server <- function(id, primary_iso, peer_isos,
       local({
         v   <- var
         ck  <- cluster_key
-        lbl <- label
         plot_id <- paste0("plot_", v)
-        tbl_id  <- paste0("tbl_",  v)
 
         output[[plot_id]] <- plotly::renderPlotly({
           render_cluster_plot(v, cluster_key = ck,
                               member_data = member_data_for(ck, v))
         })
-        shiny::outputOptions(output, plot_id, suspendWhenHidden = FALSE)
-
-        output[[tbl_id]] <- DT::renderDT({
-          DT::datatable(
-            table_data_for(ck, v),
-            caption    = lbl,
-            rownames   = FALSE,
-            extensions = "Buttons",
-            options    = list(
-              dom        = "Bfrtip",
-              buttons    = list(
-                list(extend = "csv",   filename = paste0("cgjr_", ck)),
-                list(extend = "excel", filename = paste0("cgjr_", ck)),
-                "copy"
-              ),
-              pageLength = 20,
-              scrollX    = TRUE
-            )
-          )
-        })
-        shiny::outputOptions(output, tbl_id, suspendWhenHidden = FALSE)
       })
     })
   })

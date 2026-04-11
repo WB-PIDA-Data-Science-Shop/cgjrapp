@@ -4,12 +4,10 @@
 \alias{mod_overview_ui}
 \title{Overview tab UI}
 \usage{
-mod_overview_ui(id, sidebar)
+mod_overview_ui(id)
 }
 \arguments{
 \item{id}{Module namespace ID.}
-
-\item{sidebar}{A \code{\link[bslib:sidebar]{bslib::sidebar()}} object to embed in this tab.}
 }
 \value{
 A \code{\link[bslib:nav-items]{bslib::nav_panel()}} containing the overview dashboard.

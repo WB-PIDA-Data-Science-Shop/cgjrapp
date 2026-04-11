@@ -350,3 +350,271 @@ get_indicator_choices <- function(subcluster_tbl) {
   indicators <- setdiff(names(subcluster_tbl), SUBCLUSTER_EXCLUDE_COLS)
   stats::setNames(indicators, indicators)
 }
+
+#' Get a label map from indicator variable codes to human-readable names
+#'
+#' Looks up `cgjrdata::metadata_tbl` to map variable codes (column names in
+#' subcluster tibbles) to their human-readable `var_name` labels. Variables
+#' not found in metadata fall back to the raw code. Intended for use as DT
+#' column headers in the detail module.
+#'
+#' @param indicators Character vector of indicator variable codes, e.g.
+#'   `c("wjp_rol_2", "vdem_core_v2x_pubcorr")`.
+#'
+#' @return A named character vector where names are the raw codes and values
+#'   are human-readable labels (from `metadata_tbl$var_name`, falling back to
+#'   the code itself when not found).
+#'
+#' @export
+get_indicator_label_map <- function(indicators) {
+  if (length(indicators) == 0L) return(character(0))
+  meta <- cgjrdata::metadata_tbl |>
+    dplyr::select(variable, var_name) |>
+    dplyr::distinct(variable, .keep_all = TRUE)
+  labels <- stats::setNames(indicators, indicators)
+  matched <- match(indicators, meta$variable)
+  found <- !is.na(matched)
+  labels[found] <- meta$var_name[matched[found]]
+  labels
+}
+
+# ── Data-page table helpers ───────────────────────────────────────────────────
+
+#' Build the Scores table for the Data page
+#'
+#' Returns a wide tibble of cluster and subcluster CTF score averages for the
+#' selected entities (primary country, peers, regions, income groups), filtered
+#' to `year_range`. Each score column retains its original name; the caller can
+#' rename using [get_indicator_label_map()] if desired.
+#'
+#' @param primary_iso Character scalar — ISO3 of the focal country.
+#' @param peer_isos Character vector — peer ISO3 codes.
+#' @param region_codes Character vector — selected region codes.
+#' @param income_groups Character vector — selected income group labels.
+#' @param year_range Integer vector of length 2: `c(min_year, max_year)`.
+#'
+#' @return A tibble with columns `Entity`, `Year`, then one column per score
+#'   variable in [cgjrdata::institutional_averages_tbl].
+#'
+#' @export
+get_scores_table <- function(primary_iso, peer_isos,
+                             region_codes, income_groups, year_range) {
+  score_cols <- setdiff(
+    names(cgjrdata::institutional_averages_tbl),
+    c("country_code", "country_name", "year")
+  )
+
+  country_rows <- filter_country_data(
+    data        = cgjrdata::institutional_averages_tbl,
+    primary_iso = primary_iso,
+    peer_isos   = peer_isos,
+    year_range  = year_range
+  ) |>
+    dplyr::mutate(Entity = country_name) |>
+    dplyr::select(Entity, Year = year, dplyr::all_of(score_cols))
+
+  # First subcluster of first cluster as a proxy for agg score lookup
+  first_cluster    <- names(cgjrdata::ctfdata_list)[[1]]
+  first_subcluster <- names(cgjrdata::ctfdata_list[[first_cluster]])[[1]]
+
+  agg_rows <- get_aggregate_data(
+    cluster       = first_cluster,
+    subcluster    = first_subcluster,
+    region_codes  = region_codes,
+    income_groups = income_groups,
+    year_range    = year_range
+  )
+
+  if (nrow(agg_rows) == 0L) {
+    return(dplyr::arrange(country_rows, Entity, Year))
+  }
+
+  # For aggregate entities, pull their scores from institutional_averages_tbl
+  # (which doesn't have region/income rows) — so we reconstruct from
+  # the per-cluster agg data by looping all clusters.
+  all_cluster_agg <- purrr::map(
+    names(cgjrdata::ctfdata_list),
+    function(ck) {
+      sub_key <- names(cgjrdata::ctfdata_list[[ck]])[[1]]
+      agg <- get_aggregate_data(
+        cluster       = ck,
+        subcluster    = sub_key,
+        region_codes  = region_codes,
+        income_groups = income_groups,
+        year_range    = year_range
+      )
+      if (nrow(agg) == 0L) return(NULL)
+      score_col <- paste0(ck, "_score")
+      agg |>
+        dplyr::select(group_label, year, score) |>
+        dplyr::rename(Entity = group_label, Year = year, !!score_col := score)
+    }
+  ) |>
+    purrr::compact()
+
+  if (length(all_cluster_agg) == 0L) {
+    return(dplyr::arrange(country_rows, Entity, Year))
+  }
+
+  agg_wide <- purrr::reduce(all_cluster_agg, dplyr::full_join,
+                             by = c("Entity", "Year"))
+
+  # Add any score_cols not covered by cluster aggregates as NA
+  missing_cols <- setdiff(score_cols, names(agg_wide))
+  for (col in missing_cols) agg_wide[[col]] <- NA_real_
+
+  agg_wide <- dplyr::select(agg_wide, Entity, Year, dplyr::all_of(score_cols))
+
+  dplyr::bind_rows(country_rows, agg_wide) |>
+    dplyr::arrange(Entity, Year) |>
+    dplyr::mutate(dplyr::across(where(is.double), ~ round(.x, 3)))
+}
+
+#' Build the CTF Indicators table for the Data page
+#'
+#' Returns a tibble with one row per entity × year × subcluster, and one
+#' column per indicator (rescaled 0–1 CTF values). Column names are
+#' human-readable labels from [cgjrdata::metadata_tbl]. Aggregate rows
+#' (region/income) are sourced from `regionctf_list` / `incomectf_list`.
+#'
+#' @inheritParams get_scores_table
+#'
+#' @return A tibble with columns `Entity`, `Year`, `Cluster`, `Subcluster`,
+#'   then one column per indicator.
+#'
+#' @export
+get_ctf_table <- function(primary_iso, peer_isos,
+                          region_codes, income_groups, year_range) {
+  .build_indicator_table(
+    country_list  = cgjrdata::ctfdata_list,
+    region_list   = cgjrdata::regionctf_list,
+    income_list   = cgjrdata::incomectf_list,
+    primary_iso   = primary_iso,
+    peer_isos     = peer_isos,
+    region_codes  = region_codes,
+    income_groups = income_groups,
+    year_range    = year_range
+  )
+}
+
+#' Build the Raw Data table for the Data page
+#'
+#' Returns the same structure as [get_ctf_table()] but using
+#' `rawdata_list` / `regionrawdata_list` / `incomerawdata_list` — the
+#' original source-scale indicator values before CTF rescaling.
+#'
+#' @inheritParams get_scores_table
+#'
+#' @return A tibble with columns `Entity`, `Year`, `Cluster`, `Subcluster`,
+#'   then one column per indicator (original source scale).
+#'
+#' @export
+get_raw_table <- function(primary_iso, peer_isos,
+                          region_codes, income_groups, year_range) {
+  .build_indicator_table(
+    country_list  = cgjrdata::rawdata_list,
+    region_list   = cgjrdata::regionrawdata_list,
+    income_list   = cgjrdata::incomerawdata_list,
+    primary_iso   = primary_iso,
+    peer_isos     = peer_isos,
+    region_codes  = region_codes,
+    income_groups = income_groups,
+    year_range    = year_range
+  )
+}
+
+# Internal: shared logic for get_ctf_table() and get_raw_table()
+.build_indicator_table <- function(country_list, region_list, income_list,
+                                   primary_iso, peer_isos,
+                                   region_codes, income_groups, year_range) {
+  skip <- c("country_code", "country_name", "year",
+            "score", "var_count", "nonna_count")
+
+  purrr::map_dfr(names(country_list), function(cluster_key) {
+    cluster_label <- key_to_title(cluster_key)
+    purrr::map_dfr(names(country_list[[cluster_key]]), function(sub_key) {
+      sub_label  <- key_to_title(sub_key)
+      ctry_tbl   <- country_list[[cluster_key]][[sub_key]]
+      indicators <- setdiff(names(ctry_tbl), skip)
+
+      if (length(indicators) == 0L) return(NULL)
+
+      # Country / peer rows
+      ctry_rows <- filter_country_data(
+        data        = ctry_tbl,
+        primary_iso = primary_iso,
+        peer_isos   = peer_isos,
+        year_range  = year_range
+      ) |>
+        dplyr::mutate(Entity = country_name) |>
+        dplyr::select(Entity, Year = year, dplyr::all_of(indicators))
+
+      # Region aggregate rows
+      reg_rows <- if (length(region_codes) > 0L &&
+                      !is.null(region_list[[cluster_key]][[sub_key]])) {
+        reg_tbl   <- region_list[[cluster_key]][[sub_key]]
+        reg_inds  <- intersect(indicators, names(reg_tbl))
+        if (length(reg_inds) > 0L) {
+          reg_tbl |>
+            dplyr::filter(
+              region_code %in% region_codes,
+              year >= year_range[[1]],
+              year <= year_range[[2]]
+            ) |>
+            dplyr::mutate(Entity = region) |>
+            dplyr::select(Entity, Year = year, dplyr::all_of(reg_inds))
+        } else NULL
+      } else NULL
+
+      # Income aggregate rows
+      inc_rows <- if (length(income_groups) > 0L &&
+                      !is.null(income_list[[cluster_key]][[sub_key]])) {
+        inc_tbl  <- income_list[[cluster_key]][[sub_key]]
+        inc_inds <- intersect(indicators, names(inc_tbl))
+        if (length(inc_inds) > 0L) {
+          inc_tbl |>
+            dplyr::filter(
+              income_group %in% income_groups,
+              year >= year_range[[1]],
+              year <= year_range[[2]]
+            ) |>
+            dplyr::mutate(Entity = income_group) |>
+            dplyr::select(Entity, Year = year, dplyr::all_of(inc_inds))
+        } else NULL
+      } else NULL
+
+      combined <- dplyr::bind_rows(ctry_rows, reg_rows, inc_rows)
+      if (nrow(combined) == 0L) return(NULL)
+
+      # Apply human-readable column names
+      label_map <- get_indicator_label_map(indicators)
+      combined <- dplyr::mutate(combined,
+        Cluster    = cluster_label,
+        Subcluster = sub_label,
+        .before    = 1
+      )
+      # Rename indicator columns using label map
+      ind_cols_present <- intersect(indicators, names(combined))
+      names(combined)[names(combined) %in% ind_cols_present] <-
+        label_map[names(combined)[names(combined) %in% ind_cols_present]]
+
+      combined |>
+        dplyr::arrange(Entity, Year) |>
+        dplyr::mutate(dplyr::across(where(is.double), ~ round(.x, 3)))
+    })
+  })
+}
+
+#' Convert snake_case cluster or subcluster key to a display title
+#'
+#' Replaces underscores with spaces and applies title case. Used to generate
+#' tab labels from `ctfdata_list` keys without hardcoding display strings.
+#'
+#' @param key Character scalar, e.g. `"institutional_environment"`.
+#'
+#' @return Character scalar, e.g. `"Institutional Environment"`.
+#'
+#' @export
+key_to_title <- function(key) {
+  tools::toTitleCase(gsub("_", " ", key))
+}

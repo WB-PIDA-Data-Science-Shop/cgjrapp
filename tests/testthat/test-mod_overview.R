@@ -4,9 +4,6 @@
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-# Minimal sidebar for UI tests
-test_sidebar <- bslib::sidebar("Test sidebar")
-
 # Minimal reactive wrappers that mimic what run_cgjrapp() passes to the module
 make_reactives <- function(
     primary_iso   = "GHA",
@@ -31,23 +28,23 @@ make_reactives <- function(
 # ── UI structure tests ────────────────────────────────────────────────────────
 
 test_that("mod_overview_ui returns a shiny.tag object", {
-  ui <- mod_overview_ui("test", sidebar = test_sidebar)
+  ui <- mod_overview_ui("test")
   expect_s3_class(ui, "shiny.tag")
 })
 
 test_that("mod_overview_ui includes a nav_panel with title 'Overview'", {
-  ui <- mod_overview_ui("test", sidebar = test_sidebar)
+  ui <- mod_overview_ui("test")
   expect_equal(ui$attribs$`data-value`, "overview")
 })
 
 test_that("mod_overview_ui does NOT contain an overall score plot", {
-  ui   <- mod_overview_ui("test", sidebar = test_sidebar)
+  ui   <- mod_overview_ui("test")
   html <- as.character(ui)
   expect_false(grepl("plot_overall", html))
 })
 
 test_that("mod_overview_ui contains plotlyOutput for all 4 cluster scores", {
-  ui  <- mod_overview_ui("test", sidebar = test_sidebar)
+  ui  <- mod_overview_ui("test")
   html <- as.character(ui)
   for (var in OVERVIEW_CLUSTER_VARS) {
     expect_true(
@@ -72,7 +69,7 @@ test_that("OVERVIEW_CLUSTER_VARS values match columns in institutional_averages_
 })
 
 test_that("mod_overview_ui does NOT contain threshold_mode input (it lives in sidebar)", {
-  ui   <- mod_overview_ui("test", sidebar = test_sidebar)
+  ui   <- mod_overview_ui("test")
   html <- as.character(ui)
   expect_false(grepl("threshold_mode", html))
 })

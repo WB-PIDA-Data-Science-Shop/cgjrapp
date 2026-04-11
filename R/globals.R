@@ -80,5 +80,18 @@ utils::globalVariables(c(
   # - mod_overview_server globals
   "Name",
   "Score",
-  "Year"
+  "Year",
+
+  # --- mod_detail.R globals ---
+  "Entity",
+  "variable",
+  "var_name",
+  ".DETAIL_SKIP_COLS",
+  ".DETAIL_FALLBACK_COLOUR",
+
+  # --- mod_data.R / utils_data.R data-page helpers ---
+  "Cluster",
+  "Subcluster",
+  "pagenavbar",
+  "income_group"
 ))

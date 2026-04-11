@@ -101,17 +101,30 @@ run_cgjrapp <- function(...) {
 
   # ── UI ──────────────────────────────────────────────────────────────────────
   ui <- bslib::page_navbar(
+    id       = "pagenavbar",
     title    = "govcgjr",
     fillable = FALSE,
     theme    = app_theme,
     navbar_options = bslib::navbar_options(underline = TRUE),
     padding  = "20px",
+    sidebar  = app_sidebar,
 
-    # Tab 1 -- Welcome / Home (no sidebar)
+    # Tab 1 -- Welcome / Home
     mod_welcome_ui("welcome"),
 
-    # Tab 2 -- Overview (sidebar embedded inside this tab)
-    mod_overview_ui("overview", sidebar = app_sidebar)
+    # Tab 2 -- Overview
+    mod_overview_ui("overview"),
+
+    # Tabs 3+ -- one detail tab per cluster (data-driven)
+    !!!purrr::map(
+      names(cgjrdata::ctfdata_list),
+      function(cluster_key) {
+        mod_detail_ui(cluster_key, cluster_key = cluster_key)
+      }
+    ),
+
+    # Data download tab
+    mod_data_ui("data")
   )
 
   # ── Server ──────────────────────────────────────────────────────────────────
@@ -122,9 +135,18 @@ run_cgjrapp <- function(...) {
     r_peer_isos      <- shiny::reactive(input$peer_isos %||% character(0))
     r_region_codes   <- shiny::reactive(input$region_codes %||% character(0))
     r_income_groups  <- shiny::reactive(input$income_groups %||% character(0))
-    r_year_range     <- shiny::reactive(input$year_range)
+    r_year_range     <- shiny::debounce(shiny::reactive(input$year_range), 600)
     r_threshold_mode <- shiny::reactive(input$threshold_mode)
     r_show_members   <- shiny::reactive(isTRUE(input$show_members))
+
+    # Hide sidebar on the Welcome tab; show it on all data tabs
+    shiny::observeEvent(input$pagenavbar, {
+      if (identical(input$pagenavbar, "home")) {
+        bslib::sidebar_toggle(id = "main_sidebar", open = FALSE)
+      } else {
+        bslib::sidebar_toggle(id = "main_sidebar", open = TRUE)
+      }
+    }, ignoreInit = TRUE)
 
     mod_welcome_server("welcome")
 
@@ -137,6 +159,33 @@ run_cgjrapp <- function(...) {
       year_range     = r_year_range,
       threshold_mode = r_threshold_mode,
       show_members   = r_show_members
+    )
+
+    # One detail server per cluster (data-driven)
+    purrr::iwalk(
+      cgjrdata::ctfdata_list,
+      function(cluster, cluster_key) {
+        mod_detail_server(
+          id             = cluster_key,
+          cluster_key    = cluster_key,
+          primary_iso    = r_primary_iso,
+          peer_isos      = r_peer_isos,
+          region_codes   = r_region_codes,
+          income_groups  = r_income_groups,
+          year_range     = r_year_range,
+          threshold_mode = r_threshold_mode,
+          show_members   = r_show_members
+        )
+      }
+    )
+
+    mod_data_server(
+      id            = "data",
+      primary_iso   = r_primary_iso,
+      peer_isos     = r_peer_isos,
+      region_codes  = r_region_codes,
+      income_groups = r_income_groups,
+      year_range    = r_year_range
     )
   }
 
