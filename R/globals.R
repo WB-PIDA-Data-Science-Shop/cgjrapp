@@ -93,5 +93,7 @@ utils::globalVariables(c(
   "Cluster",
   "Subcluster",
   "pagenavbar",
-  "income_group"
+  "income_group",
+  "where",
+  ":="
 ))
