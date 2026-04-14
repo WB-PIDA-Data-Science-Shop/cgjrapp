@@ -98,5 +98,18 @@ utils::globalVariables(c(
   ":=",
   "cluster",
   "description_short",
-  "subcluster"
+  "subcluster",
+
+  # --- mod_report.R / utils_report.R / utils_llm.R ---
+  "r_report_text",
+  "r_is_generating",
+  "r_is_done",
+  "r_error_msg",
+  "Entity",
+  "Year",
+  "overall_score",
+  "institutional_environment_score",
+  "political_institutions_score",
+  "center_of_government_score",
+  "sectors_service_delivery_score"
 ))

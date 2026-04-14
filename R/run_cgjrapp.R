@@ -124,7 +124,10 @@ run_cgjrapp <- function(...) {
     ),
 
     # Data download tab
-    mod_data_ui("data")
+    mod_data_ui("data"),
+
+    # AI-generated report tab
+    mod_report_ui("report")
   )
 
   # ── Server ──────────────────────────────────────────────────────────────────
@@ -181,6 +184,15 @@ run_cgjrapp <- function(...) {
 
     mod_data_server(
       id            = "data",
+      primary_iso   = r_primary_iso,
+      peer_isos     = r_peer_isos,
+      region_codes  = r_region_codes,
+      income_groups = r_income_groups,
+      year_range    = r_year_range
+    )
+
+    mod_report_server(
+      id            = "report",
       primary_iso   = r_primary_iso,
       peer_isos     = r_peer_isos,
       region_codes  = r_region_codes,
