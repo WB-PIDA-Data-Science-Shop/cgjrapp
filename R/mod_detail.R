@@ -3,10 +3,10 @@
 # fully data-driven: adding a new cluster/subcluster/indicator to cgjrdata
 # automatically produces new tabs and plots with zero code changes here.
 
-# Columns that are never indicators in a subcluster tibble
+# Columns that are never plotted as indicators in a subcluster tibble
 .DETAIL_SKIP_COLS <- c(
   "country_code", "country_name", "year",
-  "score", "var_count", "nonna_count"
+  "var_count", "nonna_count"
 )
 
 # Fallback colour when a cluster_key is not in CLUSTER_COLOURS
@@ -24,7 +24,7 @@
 #' The UI is fully data-driven from `cgjrdata::ctfdata_list[[cluster_key]]`:
 #' no hardcoding of subcluster names or indicator lists.
 #'
-#' @param id Module namespace ID — must match the `id` passed to
+#' @param id Module namespace ID -- must match the `id` passed to
 #'   [mod_detail_server()].
 #' @param cluster_key Character scalar.  One of `names(cgjrdata::ctfdata_list)`,
 #'   e.g. `"institutional_environment"`.
@@ -39,9 +39,12 @@ mod_detail_ui <- function(id, cluster_key) {
   # One sub-tab per subcluster
   subcluster_tabs <- purrr::imap(cluster, function(sub_tbl, sub_key) {
     sub_title  <- key_to_title(sub_key)
-    indicators <- setdiff(names(sub_tbl), .DETAIL_SKIP_COLS)
+    # Indicators = plotted columns excluding score (shown separately full-width)
+    indicators <- setdiff(names(sub_tbl), c(.DETAIL_SKIP_COLS, "score"))
 
-    if (length(indicators) == 0L) {
+    has_score      <- "score" %in% names(sub_tbl)
+
+    if (!has_score && length(indicators) == 0L) {
       # ── Placeholder for empty subclusters ──────────────────────────────────
       bslib::nav_panel(
         title = sub_title,
@@ -52,7 +55,39 @@ mod_detail_ui <- function(id, cluster_key) {
         )
       )
     } else {
-      # ── Plot outputs: 2-column grid, one per indicator ───────────────────
+      # ── Full-width subcluster composite score plot ───────────────────────
+      score_output_id <- ns(paste0("plot_", cluster_key, "__", sub_key, "__score"))
+      n_indicators    <- length(indicators)
+
+      score_popover_content <- shiny::tagList(
+        shiny::tags$p(
+          "This score is a weighted average of ",
+          shiny::tags$strong(n_indicators, " indicators"),
+          " in the ", shiny::tags$strong(sub_title), " subcluster."
+        )
+      )
+
+      score_plot_ui <- shiny::div(
+        class = "mb-4",
+        shiny::tags$h6(
+          class = "text-muted mb-1",
+          style = "font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;",
+          sub_title, " - Composite Score",
+          bslib::popover(
+            trigger = shiny::icon(
+              "circle-info",
+              style = "font-size: 0.75rem; color: #888;",
+              class = "ms-1"
+            ),
+            title   = paste0(sub_title, " Score"),
+            score_popover_content,
+            placement = "right"
+          )
+        ),
+        plotly::plotlyOutput(score_output_id, height = "300px")
+      )
+
+      # ── Indicator plots: 2-column grid ────────────────────────────────────
       plot_outputs <- purrr::map(indicators, function(ind) {
         output_id <- ns(paste0("plot_", cluster_key, "__", sub_key, "__", ind))
         meta      <- get_indicator_metadata(ind)
@@ -100,6 +135,7 @@ mod_detail_ui <- function(id, cluster_key) {
         title = sub_title,
         shiny::div(
           class = "pt-3",
+          score_plot_ui,
           bslib::layout_column_wrap(
             width  = 1 / 2,
             gap    = "1rem",
@@ -131,15 +167,15 @@ mod_detail_ui <- function(id, cluster_key) {
 #' All outputs are fully data-driven from `cgjrdata::ctfdata_list[[cluster_key]]`.
 #'
 #' @param id Module namespace ID.
-#' @param cluster_key Character scalar — key into `cgjrdata::ctfdata_list`.
-#' @param primary_iso Reactive string — ISO3 of the focal country.
-#' @param peer_isos Reactive character vector — peer ISO3 codes.
-#' @param region_codes Reactive character vector — selected region codes.
-#' @param income_groups Reactive character vector — selected income groups.
+#' @param cluster_key Character scalar -- key into `cgjrdata::ctfdata_list`.
+#' @param primary_iso Reactive string -- ISO3 of the focal country.
+#' @param peer_isos Reactive character vector -- peer ISO3 codes.
+#' @param region_codes Reactive character vector -- selected region codes.
+#' @param income_groups Reactive character vector -- selected income groups.
 #' @param year_range Reactive integer vector of length 2.
-#' @param threshold_mode Reactive string — one of `"abs_quartile"`,
+#' @param threshold_mode Reactive string -- one of `"abs_quartile"`,
 #'   `"abs_tercile"`, `"rel_quartile"`, `"rel_tercile"`.
-#' @param show_members Reactive logical — overlay individual country dots.
+#' @param show_members Reactive logical -- overlay individual country dots.
 #'
 #' @export
 mod_detail_server <- function(id, cluster_key,
@@ -235,7 +271,8 @@ mod_detail_server <- function(id, cluster_key,
 
     # ── Register outputs for every subcluster / indicator ───────────────────
     purrr::iwalk(cluster, function(sub_tbl, sub_key) {
-      indicators <- setdiff(names(sub_tbl), .DETAIL_SKIP_COLS)
+      # Indicators = all plotted columns except score (handled separately)
+      indicators <- setdiff(names(sub_tbl), c(.DETAIL_SKIP_COLS, "score"))
 
       # Shared reactive memo: aggregate rows computed once per subcluster,
       # not once per indicator.  Invalidates only when filter inputs change.
@@ -245,7 +282,20 @@ mod_detail_server <- function(id, cluster_key,
           agg_rows_for(sk)
         })
 
-        # -- Plot outputs: one per indicator ----------------------------------
+        # -- Score plot: full-width composite ----------------------------------
+        local({
+          oid <- paste0("plot_", cluster_key, "__", sk, "__score")
+          output[[oid]] <- plotly::renderPlotly({
+            render_indicator_plot(sk, "score", r_agg())
+          }) |>
+            shiny::bindCache(
+              primary_iso(), peer_isos(), region_codes(), income_groups(),
+              year_range(), threshold_mode(), show_members(),
+              cluster_key, sk, "score"
+            )
+        })
+
+        # -- Indicator plots: one per indicator --------------------------------
         purrr::walk(indicators, function(ind) {
           local({
             iv  <- ind

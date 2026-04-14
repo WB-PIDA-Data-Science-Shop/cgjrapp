@@ -20,6 +20,50 @@ CLUSTER_COLOURS <- c(
 
 # -- UI ------------------------------------------------------------------
 
+# Internal helper: build popover content for a cluster tab title.
+# Lists each subcluster and its indicator count, data-driven from metadata_tbl.
+.cluster_info_popover <- function(cluster_label) {
+  sub_counts <- cgjrdata::metadata_tbl |>
+    dplyr::filter(cluster == cluster_label) |>
+    dplyr::count(subcluster, name = "n") |>
+    dplyr::arrange(subcluster)
+
+  total_n <- sum(sub_counts$n)
+
+  rows <- purrr::pmap(sub_counts, function(subcluster, n) {
+    shiny::tags$tr(
+      shiny::tags$td(subcluster),
+      shiny::tags$td(
+        style = "text-align: right; padding-left: 1rem;",
+        n, " indicators"
+      )
+    )
+  })
+
+  content <- shiny::tagList(
+    shiny::tags$p(
+      "This score is a weighted average of ",
+      shiny::tags$strong(total_n, " indicators"),
+      " across ", shiny::tags$strong(nrow(sub_counts), " subclusters:"),
+    ),
+    shiny::tags$table(
+      class = "table table-sm table-borderless mb-0",
+      shiny::tags$tbody(!!!rows)
+    )
+  )
+
+  bslib::popover(
+    trigger = shiny::icon(
+      "circle-info",
+      style = "font-size: 0.75rem; color: #888;",
+      class = "ms-1"
+    ),
+    title     = paste0(cluster_label, " Score"),
+    content,
+    placement = "bottom"
+  )
+}
+
 #' Overview tab UI
 #'
 #' @param id Module namespace ID.
@@ -44,7 +88,10 @@ mod_overview_ui <- function(id) {
           OVERVIEW_CLUSTER_VARS,
           function(var, label) {
             bslib::nav_panel(
-              title = label,
+              title = shiny::tagList(
+                label,
+                .cluster_info_popover(label)
+              ),
               plotly::plotlyOutput(ns(paste0("plot_", var)), height = "380px")
             )
           }

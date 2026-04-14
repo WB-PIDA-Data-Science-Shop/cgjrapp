@@ -19,22 +19,22 @@ mod_detail_server(
 \arguments{
 \item{id}{Module namespace ID.}
 
-\item{cluster_key}{Character scalar — key into \code{cgjrdata::ctfdata_list}.}
+\item{cluster_key}{Character scalar -- key into \code{cgjrdata::ctfdata_list}.}
 
-\item{primary_iso}{Reactive string — ISO3 of the focal country.}
+\item{primary_iso}{Reactive string -- ISO3 of the focal country.}
 
-\item{peer_isos}{Reactive character vector — peer ISO3 codes.}
+\item{peer_isos}{Reactive character vector -- peer ISO3 codes.}
 
-\item{region_codes}{Reactive character vector — selected region codes.}
+\item{region_codes}{Reactive character vector -- selected region codes.}
 
-\item{income_groups}{Reactive character vector — selected income groups.}
+\item{income_groups}{Reactive character vector -- selected income groups.}
 
 \item{year_range}{Reactive integer vector of length 2.}
 
-\item{threshold_mode}{Reactive string — one of \code{"abs_quartile"},
+\item{threshold_mode}{Reactive string -- one of \code{"abs_quartile"},
 \code{"abs_tercile"}, \code{"rel_quartile"}, \code{"rel_tercile"}.}
 
-\item{show_members}{Reactive logical — overlay individual country dots.}
+\item{show_members}{Reactive logical -- overlay individual country dots.}
 }
 \description{
 Registers \code{\link[plotly:plotly-shiny]{plotly::renderPlotly()}} outputs for every indicator in every

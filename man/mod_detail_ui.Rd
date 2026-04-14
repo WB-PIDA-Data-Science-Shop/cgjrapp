@@ -7,7 +7,7 @@
 mod_detail_ui(id, cluster_key)
 }
 \arguments{
-\item{id}{Module namespace ID — must match the \code{id} passed to
+\item{id}{Module namespace ID -- must match the \code{id} passed to
 \code{\link[=mod_detail_server]{mod_detail_server()}}.}
 
 \item{cluster_key}{Character scalar.  One of \code{names(cgjrdata::ctfdata_list)},
