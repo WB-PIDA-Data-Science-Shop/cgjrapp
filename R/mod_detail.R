@@ -55,11 +55,42 @@ mod_detail_ui <- function(id, cluster_key) {
       # ── Plot outputs: 2-column grid, one per indicator ───────────────────
       plot_outputs <- purrr::map(indicators, function(ind) {
         output_id <- ns(paste0("plot_", cluster_key, "__", sub_key, "__", ind))
+        meta      <- get_indicator_metadata(ind)
+        label     <- if (!is.null(meta)) meta$var_name else ind
+
+        # Build popover content from metadata if available
+        info_btn <- if (!is.null(meta)) {
+          popover_content <- shiny::tagList(
+            shiny::tags$p(
+              shiny::tags$strong("Code: "),
+              shiny::tags$code(meta$variable)
+            ),
+            shiny::tags$p(
+              shiny::tags$strong("Source: "),
+              meta$source
+            ),
+            shiny::tags$p(meta$description_short)
+          )
+          bslib::popover(
+            trigger = shiny::icon(
+              "circle-info",
+              style = "font-size: 0.75rem; color: #888; margin-left: 4px;",
+              class = "ms-1"
+            ),
+            title   = meta$var_name,
+            popover_content,
+            placement = "right"
+          )
+        } else {
+          NULL
+        }
+
         shiny::div(
           shiny::tags$h6(
             class = "text-muted mb-1",
             style = "font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;",
-            .indicator_display_label(ind)
+            label,
+            info_btn
           ),
           plotly::plotlyOutput(output_id, height = "300px")
         )

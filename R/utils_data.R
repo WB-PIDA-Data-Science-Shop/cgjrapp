@@ -378,6 +378,26 @@ get_indicator_label_map <- function(indicators) {
   labels
 }
 
+#' Get metadata for a single indicator code
+#'
+#' Returns a named list with fields `var_name`, `variable`, `cluster`,
+#' `subcluster`, `description_short`, and `source` for the given indicator
+#' code. Falls back gracefully when the indicator is not in
+#' [cgjrdata::metadata_tbl].
+#'
+#' @param ind Character scalar — indicator column name, e.g. `"wjp_rol_2"`.
+#' @return A named list, or `NULL` if `ind` is not found in metadata.
+#' @export
+get_indicator_metadata <- function(ind) {
+  row <- cgjrdata::metadata_tbl |>
+    dplyr::filter(variable == ind) |>
+    dplyr::select(var_name, variable, cluster, subcluster,
+                  description_short, source) |>
+    dplyr::slice(1L)
+  if (nrow(row) == 0L) return(NULL)
+  as.list(row)
+}
+
 # ── Data-page table helpers ───────────────────────────────────────────────────
 
 #' Build the Scores table for the Data page

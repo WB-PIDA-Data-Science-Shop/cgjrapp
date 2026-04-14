@@ -292,6 +292,17 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
   primary_data <- data |> dplyr::filter(country_type == "primary")
   bench_data   <- data |> dplyr::filter(country_type != "primary")
 
+  # Restrict all layers to years where the primary country has non-missing data.
+  # This avoids rendering zone bands, bench lines, or peer dots in years where
+  # the primary country has no observation for this indicator.
+  valid_years <- primary_data |>
+    dplyr::filter(!is.na(.data[[y_var]])) |>
+    dplyr::pull(year)
+
+  primary_data <- primary_data |> dplyr::filter(year %in% valid_years)
+  bench_data   <- bench_data   |> dplyr::filter(year %in% valid_years)
+  data         <- data         |> dplyr::filter(year %in% valid_years)
+
   # Status classification — uses per-row q1/q2 (works for both modes)
   if (nrow(primary_data) > 0) {
     primary_data <- primary_data |>
@@ -334,7 +345,10 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
     dplyr::mutate(zone_base, zone = zone_levels[[2]], ymin = q1,     ymax = q2),
     dplyr::mutate(zone_base, zone = zone_levels[[3]], ymin = q2,     ymax = ymax_1)
   ) |>
-    dplyr::mutate(zone = factor(zone, levels = zone_levels))
+    dplyr::mutate(zone = factor(zone, levels = zone_levels)) |>
+    # Drop zero-height bands (degenerate distributions where q1 == q2).
+    # The legend entries still appear via scale_fill_manual(drop = FALSE).
+    dplyr::filter(ymax > ymin)
 
   # ── Base plot — geom_rect zone bands (numeric x-axis) ───────────────────────
   p <- ggplot2::ggplot() +
