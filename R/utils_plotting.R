@@ -299,6 +299,25 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
     dplyr::filter(!is.na(.data[[y_var]])) |>
     dplyr::pull(year)
 
+  # Return early if the primary country has no data for this indicator
+  if (length(valid_years) == 0L) {
+    return(
+      ggplot2::ggplot() +
+        ggplot2::annotate(
+          "text", x = mean(seq(year_range[[1]], year_range[[2]])), y = 0.5,
+          label = "No data available for the selected filters.",
+          size = 4.5, colour = "#888888", hjust = 0.5
+        ) +
+        ggplot2::scale_x_continuous(
+          limits = c(year_range[[1]] - 0.5, year_range[[2]] + 0.5),
+          breaks = seq(year_range[[1]], year_range[[2]]),
+          labels = as.character(seq(year_range[[1]], year_range[[2]]))
+        ) +
+        ggplot2::scale_y_continuous(limits = c(0, 1)) +
+        .cgjr_theme()
+    )
+  }
+  
   primary_data <- primary_data |> dplyr::filter(year %in% valid_years)
   bench_data   <- bench_data   |> dplyr::filter(year %in% valid_years)
   data         <- data         |> dplyr::filter(year %in% valid_years)
@@ -350,12 +369,14 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
     # The legend entries still appear via scale_fill_manual(drop = FALSE).
     dplyr::filter(ymax > ymin)
 
+
   # ── Base plot — geom_rect zone bands (numeric x-axis) ───────────────────────
   # Pass seg_data as the *primary* ggplot() dataset so plotly's to_basic.GeomRect
   # finds all aes() columns (xmin, xmax, ymin, ymax, zone) as real columns in
   # the inherited data frame, avoiding the cbind/eval "object not found" error.
-  p <- ggplot2::ggplot(data = seg_data) +
+  p <- ggplot2::ggplot() +
     ggplot2::geom_rect(
+      data    = seg_data,
       mapping = ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,
                              fill = zone),
       alpha   = 0.30,

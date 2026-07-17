@@ -355,7 +355,7 @@ test_that("plot_cgjr_master works with subcluster score data", {
     y_var          = "score",
     primary_iso    = "GHA",
     year_range     = c(2013L, 2024L),
-    threshold_mode = "abs_default"
+    threshold_mode = "abs_quartile"
   )
   expect_s3_class(p, "ggplot")
 })
@@ -374,7 +374,7 @@ test_that("plot_cgjr_master works with subcluster indicator data", {
     y_var          = ind_col,
     primary_iso    = "GHA",
     year_range     = c(2013L, 2024L),
-    threshold_mode = "abs_default"
+    threshold_mode = "abs_quartile"
   )
   expect_s3_class(p, "ggplot")
 })
