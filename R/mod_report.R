@@ -226,8 +226,6 @@ mod_report_server <- function(id, primary_iso, peer_isos,
         return()
       }
 
-      system_prompt <- .cgjr_system_prompt()
-
       # Stream in a future so the UI remains responsive
       shiny::withProgress(
         message = paste0("Generating report for ", country_name, "..."),
@@ -235,10 +233,9 @@ mod_report_server <- function(id, primary_iso, peer_isos,
         {
           tryCatch(
             stream_llm_response(
-              prompt        = user_prompt,
-              system_prompt = system_prompt,
-              reactive_val  = r_report_text,
-              on_complete   = function() {
+              prompt       = user_prompt,
+              reactive_val = r_report_text,
+              on_complete  = function(text) {
                 r_is_generating(FALSE)
                 r_is_done(TRUE)
               }

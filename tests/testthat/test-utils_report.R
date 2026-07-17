@@ -83,7 +83,7 @@ test_that(".cgjr_system_prompt() references all four CGJR thematic areas", {
 
 # ── build_cgjr_prompt() ───────────────────────────────────────────────────────
 
-test_that("build_cgjr_prompt() returns a character scalar", {
+test_that("build_cgjr_prompt() returns a named list with system and user", {
   tbl    <- .make_scores_tbl()
   result <- build_cgjr_prompt(
     primary_iso  = "GHA",
@@ -91,22 +91,24 @@ test_that("build_cgjr_prompt() returns a character scalar", {
     scores_tbl   = tbl,
     year_range   = c(2013L, 2023L)
   )
-  expect_type(result, "character")
-  expect_length(result, 1L)
+  expect_type(result, "list")
+  expect_named(result, c("system", "user"))
+  expect_type(result$system, "character")
+  expect_type(result$user,   "character")
 })
 
 test_that("build_cgjr_prompt() includes country name and ISO", {
   tbl    <- .make_scores_tbl()
   result <- build_cgjr_prompt("GHA", "Ghana", tbl, c(2013L, 2023L))
-  expect_true(grepl("Ghana", result, fixed = TRUE))
-  expect_true(grepl("GHA",   result, fixed = TRUE))
+  expect_true(grepl("Ghana", result$user, fixed = TRUE))
+  expect_true(grepl("GHA",   result$user, fixed = TRUE))
 })
 
 test_that("build_cgjr_prompt() includes year range", {
   tbl    <- .make_scores_tbl()
   result <- build_cgjr_prompt("GHA", "Ghana", tbl, c(2015L, 2022L))
-  expect_true(grepl("2015", result, fixed = TRUE))
-  expect_true(grepl("2022", result, fixed = TRUE))
+  expect_true(grepl("2015", result$user, fixed = TRUE))
+  expect_true(grepl("2022", result$user, fixed = TRUE))
 })
 
 test_that("build_cgjr_prompt() lists peer countries when provided", {
@@ -115,14 +117,14 @@ test_that("build_cgjr_prompt() lists peer countries when provided", {
     "GHA", "Ghana", tbl, c(2013L, 2023L),
     peer_isos = c("NGA", "KEN")
   )
-  expect_true(grepl("NGA", result, fixed = TRUE))
-  expect_true(grepl("KEN", result, fixed = TRUE))
+  expect_true(grepl("NGA", result$user, fixed = TRUE))
+  expect_true(grepl("KEN", result$user, fixed = TRUE))
 })
 
 test_that("build_cgjr_prompt() says no comparators when none provided", {
   tbl    <- .make_scores_tbl()
   result <- build_cgjr_prompt("GHA", "Ghana", tbl, c(2013L, 2023L))
-  expect_true(grepl("No comparators selected", result, fixed = TRUE))
+  expect_true(grepl("No comparators selected", result$user, fixed = TRUE))
 })
 
 test_that("build_cgjr_prompt() lists regions and income groups when provided", {
@@ -132,8 +134,8 @@ test_that("build_cgjr_prompt() lists regions and income groups when provided", {
     region_codes  = "SSA",
     income_groups = "Lower middle income"
   )
-  expect_true(grepl("SSA",                  result, fixed = TRUE))
-  expect_true(grepl("Lower middle income",  result, fixed = TRUE))
+  expect_true(grepl("SSA",                 result$user, fixed = TRUE))
+  expect_true(grepl("Lower middle income", result$user, fixed = TRUE))
 })
 
 # ── format_report_docx() ─────────────────────────────────────────────────────

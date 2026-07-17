@@ -2,28 +2,50 @@
 % Please edit documentation in R/utils_llm.R
 \name{stream_llm_response}
 \alias{stream_llm_response}
-\title{Stream an LLM completion and update a Shiny reactive value}
+\title{Stream LLM Response}
 \usage{
-stream_llm_response(prompt, system_prompt, reactive_val, on_complete = NULL)
+stream_llm_response(prompt, reactive_val, on_complete = NULL)
 }
 \arguments{
-\item{prompt}{Character scalar -- the full user-side prompt (system prompt
-should be baked in by the caller or passed via ellmer's \code{system} arg).}
+\item{prompt}{A named list with character elements \code{system} and \code{user}, as
+returned by \code{build_cgjr_prompt()}.}
 
-\item{system_prompt}{Character scalar -- system prompt sent to the model.}
+\item{reactive_val}{A \code{shiny::reactiveVal} that will be updated with the
+accumulated response text after each token. The value always contains the
+full text received so far.}
 
-\item{reactive_val}{A \code{shiny::reactiveVal} that accumulates streamed tokens.}
-
-\item{on_complete}{Optional zero-argument function called after streaming
-completes successfully.}
+\item{on_complete}{Optional function called once streaming finishes. Receives
+the complete response text as its only argument. Default is \code{NULL}.}
 }
 \value{
-Called for side effects; returns \code{NULL} invisibly.
+Invisibly returns the full response text (character scalar) after
+streaming completes.
 }
 \description{
-Sends \code{prompt} to the configured LLM endpoint using \code{ellmer::chat_openai()}
-(which is OpenAI-API-compatible and therefore works with Groq). Each token
-chunk is appended to \code{reactive_val} so the UI can update progressively via
-\code{shiny::invalidateLater()} or reactive binding. On completion, the optional
-\code{on_complete} callback is called with the full response text.
+Sends a prompt to an OpenAI-compatible LLM endpoint via \code{ellmer} and streams
+the response token-by-token into a \code{shiny::reactiveVal()}. This provides
+progressive rendering in the UI rather than a long wait for the full response.
+
+The LLM provider and model are resolved from environment variables at call
+time, so no code changes are needed to switch providers.
+
+Internally uses \code{coro::loop()} and \code{coro::yield()} to iterate over the
+generator returned by \code{ellmer}'s \verb{$stream()} method.
 }
+\details{
+Stream an LLM response into a Shiny reactive value
+}
+\examples{
+\dontrun{
+# In a Shiny server context:
+report_text <- shiny::reactiveVal("")
+
+stream_llm_response(
+  prompt       = build_cgjr_prompt("GHA", "Ghana", scores_tbl, c(2013L, 2024L)),
+  reactive_val = report_text,
+  on_complete  = function(text) message("Streaming complete: ", nchar(text), " chars")
+)
+}
+
+}
+\keyword{internal}

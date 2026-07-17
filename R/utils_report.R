@@ -118,7 +118,7 @@
 #' @param income_groups Character vector of selected income group labels (may
 #'   be empty).
 #'
-#' @return A character scalar containing the full user prompt.
+#' @return A named list with elements `system` (character) and `user` (character).
 #' @export
 build_cgjr_prompt <- function(primary_iso, primary_name, scores_tbl,
                                year_range,
@@ -142,7 +142,7 @@ build_cgjr_prompt <- function(primary_iso, primary_name, scores_tbl,
 
   year_block <- paste0("Analysis period: ", year_range[[1]], " to ", year_range[[2]])
 
-  paste0(
+  user_text <- paste0(
     "Please write the governance and public institutions chapter for the ",
     "Country Growth and Jobs Report for ", primary_name, " (", primary_iso, ").\n\n",
     year_block, "\n\n",
@@ -153,6 +153,11 @@ build_cgjr_prompt <- function(primary_iso, primary_name, scores_tbl,
     "covering all four thematic areas. Prioritise the areas where ", primary_name,
     " shows the largest gaps from the frontier and from its comparators. ",
     "Suggest 2-3 concrete reform priorities."
+  )
+
+  list(
+    system = .cgjr_system_prompt(),
+    user   = user_text
   )
 }
 

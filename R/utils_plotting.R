@@ -351,9 +351,11 @@ plot_cgjr_master <- function(data, y_var, primary_iso, year_range,
     dplyr::filter(ymax > ymin)
 
   # ── Base plot — geom_rect zone bands (numeric x-axis) ───────────────────────
-  p <- ggplot2::ggplot() +
+  # Pass seg_data as the *primary* ggplot() dataset so plotly's to_basic.GeomRect
+  # finds all aes() columns (xmin, xmax, ymin, ymax, zone) as real columns in
+  # the inherited data frame, avoiding the cbind/eval "object not found" error.
+  p <- ggplot2::ggplot(data = seg_data) +
     ggplot2::geom_rect(
-      data    = seg_data,
       mapping = ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,
                              fill = zone),
       alpha   = 0.30,

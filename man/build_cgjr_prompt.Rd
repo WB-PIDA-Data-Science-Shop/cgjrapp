@@ -31,7 +31,7 @@ build_cgjr_prompt(
 be empty).}
 }
 \value{
-A character scalar containing the full user prompt.
+A named list with elements \code{system} (character) and \code{user} (character).
 }
 \description{
 Combines the scores summary, peer/benchmark comparisons, and instructions

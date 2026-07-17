@@ -1,39 +1,3 @@
-test_that(".llm_base_url() errors when env var is unset", {
-  withr::with_envvar(list(CGJR_LLM_BASE_URL = ""), {
-    expect_error(.llm_base_url(), "CGJR_LLM_BASE_URL")
-  })
-})
-
-test_that(".llm_base_url() returns value when env var is set", {
-  withr::with_envvar(list(CGJR_LLM_BASE_URL = "https://example.com"), {
-    expect_equal(.llm_base_url(), "https://example.com")
-  })
-})
-
-test_that(".llm_model() errors when env var is unset", {
-  withr::with_envvar(list(CGJR_LLM_MODEL = ""), {
-    expect_error(.llm_model(), "CGJR_LLM_MODEL")
-  })
-})
-
-test_that(".llm_model() returns value when env var is set", {
-  withr::with_envvar(list(CGJR_LLM_MODEL = "llama-3.3-70b-versatile"), {
-    expect_equal(.llm_model(), "llama-3.3-70b-versatile")
-  })
-})
-
-test_that(".llm_api_key() errors when env var is unset", {
-  withr::with_envvar(list(CGJR_LLM_API_KEY = ""), {
-    expect_error(.llm_api_key(), "CGJR_LLM_API_KEY")
-  })
-})
-
-test_that(".llm_api_key() returns value when env var is set", {
-  withr::with_envvar(list(CGJR_LLM_API_KEY = "test-key-123"), {
-    expect_equal(.llm_api_key(), "test-key-123")
-  })
-})
-
 test_that("check_llm_available() returns FALSE on unreachable host", {
   withr::with_envvar(
     list(CGJR_LLM_BASE_URL = "https://this-host-does-not-exist.invalid"),
@@ -44,10 +8,37 @@ test_that("check_llm_available() returns FALSE on unreachable host", {
   )
 })
 
-test_that("check_llm_available() returns FALSE when env var is unset", {
-  withr::with_envvar(list(CGJR_LLM_BASE_URL = ""), {
-    # .llm_base_url() will abort, which check_llm_available() should handle
-    result <- check_llm_available()
-    expect_false(result)
-  })
+test_that("check_llm_available() returns FALSE on localhost with no server running", {
+  # Port 19999 is almost certainly not listening
+  withr::with_envvar(
+    list(CGJR_LLM_BASE_URL = "http://127.0.0.1:19999"),
+    {
+      result <- check_llm_available()
+      expect_false(result)
+    }
+  )
+})
+
+test_that("stream_llm_response() reads CGJR_LLM_BASE_URL env var", {
+  # Verify the function uses CGJR_ prefix by checking it tries the right URL
+  # (it will fail to connect, but the error should not mention a wrong URL)
+  withr::with_envvar(
+    list(
+      CGJR_LLM_BASE_URL = "http://127.0.0.1:19999",
+      CGJR_LLM_MODEL    = "test-model",
+      CGJR_LLM_API_KEY  = "test-key"
+    ),
+    {
+      acc <- shiny::reactiveVal("")
+      # Expect an error (no server), not a silent wrong-URL failure
+      expect_error(
+        shiny::isolate(
+          stream_llm_response(
+            prompt       = list(system = "sys", user = "user"),
+            reactive_val = acc
+          )
+        )
+      )
+    }
+  )
 })

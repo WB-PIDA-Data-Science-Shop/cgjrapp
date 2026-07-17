@@ -2,16 +2,33 @@
 % Please edit documentation in R/utils_llm.R
 \name{check_llm_available}
 \alias{check_llm_available}
-\title{Check whether the configured LLM endpoint is reachable}
+\title{Check LLM Availability}
 \usage{
 check_llm_available()
 }
 \value{
-Logical scalar.
+Logical scalar. \code{TRUE} if the endpoint responds within 5 seconds;
+\code{FALSE} otherwise.
 }
 \description{
-Attempts a lightweight HTTP GET to the LLM base URL. Returns \code{TRUE} if the
-server responds (any status code) and \code{FALSE} on connection error. This is
-used in the report module to give a graceful degradation message when the
-API is not available.
+Performs a lightweight HTTP GET to the configured LLM base URL with a
+5-second timeout. Used before attempting report generation to surface a
+clear, user-friendly error message if the endpoint is unreachable, rather
+than silently failing during streaming.
+
+Returns \code{FALSE} for any error (connection refused, timeout, DNS failure,
+HTTP error response), and \code{TRUE} only when the server responds at all —
+even a 404 counts as "reachable" because it indicates the server is running.
 }
+\details{
+Check whether the configured LLM endpoint is reachable
+}
+\examples{
+\dontrun{
+if (!check_llm_available()) {
+  stop("LLM endpoint is not reachable. Check CGJR_LLM_BASE_URL.")
+}
+}
+
+}
+\keyword{internal}
