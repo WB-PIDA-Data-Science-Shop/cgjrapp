@@ -20,38 +20,47 @@ knitr::opts_chunk$set(
 [![Codecov test coverage](https://codecov.io/gh/WB-PIDA-Data-Science-Shop/cgjrapp/graph/badge.svg)](https://app.codecov.io/gh/WB-PIDA-Data-Science-Shop/cgjrapp)
 <!-- badges: end -->
 
-`cgjrapp` is a Shiny dashboard that visualises governance data 
-for the institutional chapter of the World Bank's
-**Country Growth and Jobs Report (CGJR)**. It enables country-level
-benchmarking across four governance clusters and thirteen subclusters,
-drawing on indicator data from the companion
-[`cgjrdata`](https://github.com/WB-PIDA-Data-Science-Shop/cgjrdata)
+`cgjrapp` is the Shiny dashboard for the institutional chapter of the World
+Bank's **Country Jobs and Growth Report (CGJR)**. It benchmarks a country,
+region or income group against a chosen comparison group across the CGJR
+governance taxonomy, using Closeness-to-Frontier (CTF) indicator data from the
+companion [`cgjrdata`](https://github.com/WB-PIDA-Data-Science-Shop/cgjrdata)
 package.
 
-## Features
+## What it does
 
-- **Overview tab** — evolution of CTF scores over time for a selected
-  country, with peer, regional, and income-group benchmarks overlaid.
-- **Benchmarking thresholds** — switch between four modes via a sidebar
-  dropdown: relative quartiles, relative terciles, absolute quartiles,
-  and absolute terciles.
-- **Zone legend** — colour-coded weak / emerging / strong capacity zones
-  always visible in the chart legend.
-- **Interactive charts** — powered by `plotly` for hover tooltips and
-  zoom.
+- **Sidebar selection.** Pick a base unit and a comparison group — countries,
+  WB regions and income groups are all selectable together. Choose the
+  benchmarking thresholds (quartiles or terciles) and a year range, then
+  *Apply*.
+- **Benchmarking tab.** A nested accordion generated from `cgjr_taxonomy`
+  (cluster → subcluster → sub-subcluster). Each leaf card shows the base
+  unit's indicators against the comparison group, coloured Weak / Emerging /
+  Strong, plus a **live composite score**. Static (latest snapshot) or
+  Dynamic (over time, even years).
+- **Data tab.** Download the live composite scores, the precomputed
+  `cgjr_scores` reference (a *different* calculation, labelled as such), the
+  indicator-level CTF and raw values, and the full indicator catalogue.
+- **AI Report tab.** Draft a governance chapter from the current selection's
+  scores and download it as Word (LLM provider is configured by environment
+  variable).
+
+Composite scores are **computed live for the chosen comparison group** — a
+deliberate port of the CLIAR methodology (`def_quantiles()` /
+`compute_family_average_app()`), checked cell-for-cell against `cliarappak`'s
+own functions. Indicators the base unit lacks, or that are flat across the
+group, are dropped first, so the numbers depend on the selection.
 
 ## Prerequisites
 
-`cgjrapp` depends on the private `cgjrdata` package. Install it first:
+`cgjrapp` depends on the `cgjrdata` package (tidy-tibble build):
 
 ``` r
 # install.packages("pak")
-pak::pak("WB-PIDA-Data-Science-Shop/cgjrdata")
+pak::pak("WB-PIDA-Data-Science-Shop/cgjrdata@rewrite-tidy-tibble")
 ```
 
 ## Installation
-
-Install the development version of `cgjrapp` from GitHub:
 
 ``` r
 pak::pak("WB-PIDA-Data-Science-Shop/cgjrapp")
@@ -61,42 +70,29 @@ pak::pak("WB-PIDA-Data-Science-Shop/cgjrapp")
 
 ``` r
 library(cgjrapp)
-
 run_cgjrapp()
 ```
 
-This launches the Shiny dashboard in your default browser. Use the
-sidebar to select a **primary country**, optional **peer countries**,
-**region**, **income group**, **year range**, and **benchmarking
-threshold** mode.
+## The taxonomy
 
-## Data
-
-All indicator data is sourced from `cgjrdata::institutional_averages_tbl`
-and related exports. The four governance clusters are:
-
-| Cluster | Subclusters |
-|---|---|
-| Institutional Environment | Degree of Integrity, Transparency & Accountability, Justice & Rule of Law, Social Cohesion |
-| Political Institutions | … |
-| Centre of Government | … |
-| Sectors & Service Delivery | … |
+Four clusters, 11 subclusters, 14 leaf nodes (Public Financial Management is
+the only branching subcluster). The exact names, ordering and nesting are read
+from `cgjrdata::cgjr_taxonomy` — nothing is hardcoded in the app, so a change
+to the taxonomy is reflected with no code change.
 
 ## Development
 
 ``` r
-# Load all functions without installing
 devtools::load_all()
-
-# Run tests
 devtools::test()
-
-# Full R CMD check
 devtools::check()
-
-# Rebuild README
 devtools::build_readme()
 ```
+
+The methodology parity tests (`tests/testthat/test-utils_family.R`) need a
+sibling checkout of
+[`cliarappak`](https://github.com/WB-PIDA-Data-Science-Shop/cliarappak) (or
+`CLIARAPPAK_DIR` set); they skip otherwise.
 
 ## License
 

@@ -2,15 +2,14 @@
 % Please edit documentation in R/utils_data.R
 \name{get_region_choices}
 \alias{get_region_choices}
-\title{Get region choices for the benchmark groups selector}
+\title{WB region choices for the comparator selector}
 \usage{
 get_region_choices()
 }
 \value{
-A named character vector: names are full region names, values are
-region codes (e.g. \code{"EAP"}).
+Named character vector: names are region names, values are region
+codes (e.g. \code{"EAP"}).
 }
 \description{
-Returns a named character vector of World Bank regions derived from
-\link[cgjrdata:wbcountries]{cgjrdata::wbcountries}, suitable for use in \code{\link[shiny:selectInput]{shiny::selectizeInput()}}.
+WB region choices for the comparator selector
 }

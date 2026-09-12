@@ -7,19 +7,16 @@
 format_report_docx(report_text, country_name, report_date = Sys.Date())
 }
 \arguments{
-\item{report_text}{Character scalar -- Markdown text from the LLM.}
+\item{report_text}{Character scalar - Markdown text from the LLM.}
 
-\item{country_name}{Character scalar -- country name for the title.}
+\item{country_name}{Character scalar - for the title.}
 
-\item{report_date}{Date or character -- date for the subtitle. Defaults to
-\code{\link[=Sys.Date]{Sys.Date()}}.}
+\item{report_date}{Date/character - subtitle date. Defaults to \code{\link[=Sys.Date]{Sys.Date()}}.}
 }
 \value{
-An \code{officer} \code{rdocx} object ready to be written with
-\code{\link[officer:print.rdocx]{officer::print.rdocx()}} or passed to \code{print(doc, target = path)}.
+An \code{officer} \code{rdocx} object.
 }
 \description{
-Converts Markdown text (as produced by the LLM) into a simple Word document
-using \code{officer}. Sections demarcated by \verb{##} headings are rendered as
-Heading 2; \verb{###} headings as Heading 3; all other lines as Normal paragraphs.
+Markdown (LLM output) -> a simple \code{officer} \code{rdocx}: \verb{##}/\verb{###}/\verb{#} become
+Heading 2/3/1, list markers are stripped, everything else is Normal.
 }

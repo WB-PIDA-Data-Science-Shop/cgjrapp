@@ -17,10 +17,12 @@
 
 ## 📈 Getting Started
 
-1.  **Navigate to the 'Diagnostics' Tab:** Begin by selecting your primary country of interest.
-2.  **Configure Comparisons:** Select the countries or regions you wish to use as benchmarks.
-3.  **Choose Dimensions:** Use the dropdown menus to select the specific institutional indicators relevant to your analysis.
-4.  **Export Results:** Download high-resolution plots and summary tables for inclusion in reports or presentations.
+1.  **Build a selection in the sidebar:** choose a **base unit** (a country, region or income group) and a **comparison group** — countries, regions and income groups can be mixed freely. Pick the benchmarking thresholds and, for the over-time view, a year range. Click **Apply selection**.
+2.  **Benchmarking tab:** expand a cluster → subcluster to see each leaf card — the indicator dots for your base unit against the comparison group, and the live composite score. Toggle **Static** (latest snapshot) / **Dynamic** (over time, even years).
+3.  **Data tab:** download the underlying tables — the live composite scores, the precomputed `cgjr_scores` reference (a different calculation — see the note there), the indicator-level CTF and raw values, and the full indicator catalogue.
+4.  **AI Report tab:** generate a draft governance chapter from the current selection's scores, and download it as Word.
+
+All scores are computed **live for your chosen comparison group** — indicators the base unit lacks, or that are flat across the group, are dropped first — so the numbers change with the selection.
 
 ---
 

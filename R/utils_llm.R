@@ -1,22 +1,22 @@
-# utils_llm.R — Provider-agnostic LLM interface
+# utils_llm.R - Provider-agnostic LLM interface
 #
 # Functions:
-#   stream_llm_response()  — stream LLM tokens into a Shiny reactiveVal
-#   check_llm_available()  — test whether the configured endpoint is reachable
+#   stream_llm_response()  - stream LLM tokens into a Shiny reactiveVal
+#   check_llm_available()  - test whether the configured endpoint is reachable
 #
 # Configuration is entirely via environment variables. Set these in .Renviron
 # (local development) or the Posit Connect environment panel (production):
 #
-#   CGJR_LLM_BASE_URL  — API base URL  (default: http://localhost:11434/v1)
-#   CGJR_LLM_MODEL     — Model name    (default: llama3.2)
-#   CGJR_LLM_API_KEY   — Auth key      (default: ollama)
+#   CGJR_LLM_BASE_URL  - API base URL  (default: http://localhost:11434/v1)
+#   CGJR_LLM_MODEL     - Model name    (default: llama3.2)
+#   CGJR_LLM_API_KEY   - Auth key      (default: ollama)
 #
 # Provider routing (automatic, based on CGJR_LLM_BASE_URL):
-#   - api.groq.com       → ellmer::chat_groq()         (avoids service_tier field)
-#   - everything else    → ellmer::chat_openai_compatible() (generic, no OAI extras)
+#   - api.groq.com       -> ellmer::chat_groq()         (avoids service_tier field)
+#   - everything else    -> ellmer::chat_openai_compatible() (generic, no OAI extras)
 #
 # Switching between Ollama, Groq, or WBG mAI requires only updating these
-# environment variables — zero code changes.
+# environment variables - zero code changes.
 
 
 #' Stream an LLM response into a Shiny reactive value
@@ -90,7 +90,7 @@ stream_llm_response <- function(prompt, reactive_val, on_complete = NULL) {
   }
 
   # $stream() returns a coro_generator_instance.
-  # coro::loop() takes a for-expression as its argument — the correct
+  # coro::loop() takes a for-expression as its argument - the correct
   # consumer pattern for iterating coro generators outside generator bodies.
   gen <- chat$stream(prompt$user)
 
@@ -119,7 +119,7 @@ stream_llm_response <- function(prompt, reactive_val, on_complete = NULL) {
 #' than silently failing during streaming.
 #'
 #' Returns `FALSE` for any error (connection refused, timeout, DNS failure,
-#' HTTP error response), and `TRUE` only when the server responds at all —
+#' HTTP error response), and `TRUE` only when the server responds at all -
 #' even a 404 counts as "reachable" because it indicates the server is running.
 #'
 #' @return Logical scalar. `TRUE` if the endpoint responds within 5 seconds;
@@ -141,7 +141,7 @@ check_llm_available <- function() {
   tryCatch({
     httr2::request(base_url) |>
       httr2::req_timeout(5) |>
-      # Treat any HTTP status as "reachable" — we just want to know the server
+      # Treat any HTTP status as "reachable" - we just want to know the server
       # is up; a 404 from Ollama is fine
       httr2::req_error(is_error = function(resp) FALSE) |>
       httr2::req_perform()

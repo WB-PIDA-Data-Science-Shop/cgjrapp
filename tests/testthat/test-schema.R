@@ -1,165 +1,122 @@
-test_that("cgjrdata is installed and loads", {
+# Contract tests for the tidy `cgjrdata` objects the app is built against
+# (the rewrite-tidy-tibble build: cgjr_taxonomy / cgjr_crosswalk / cgjr_ctf /
+# cgjr_scores / cgjr_raw / wbcountries). Rewritten from the old list-based
+# schema when cgjrapp moved to the tidy dependency.
+
+test_that("cgjrdata is installed and ships the six tidy objects", {
   expect_true(requireNamespace("cgjrdata", quietly = TRUE))
+  items <- data(package = "cgjrdata")$results[, "Item"]
+  expect_true(all(
+    c("cgjr_taxonomy", "cgjr_crosswalk", "cgjr_ctf", "cgjr_scores",
+      "cgjr_raw", "wbcountries") %in% items
+  ))
 })
 
-test_that("institutional_averages_tbl has expected columns", {
-  expected_cols <- c(
-    "country_code", "country_name", "year",
-    "institutional_environment_score",
-    "political_institutions_score",
-    "center_of_government_score",
-    "sectors_service_delivery_score",
-    "overall_score"
-  )
-  actual_cols <- names(cgjrdata::institutional_averages_tbl)
-  expect_true(
-    all(expected_cols %in% actual_cols),
-    label = paste(
-      "Missing columns:",
-      paste(setdiff(expected_cols, actual_cols), collapse = ", ")
-    )
-  )
-})
-
-test_that("institutional_averages_tbl covers expected year range", {
-  years <- cgjrdata::institutional_averages_tbl$year
-  expect_lte(min(years, na.rm = TRUE), 2013L)
-  expect_gte(max(years, na.rm = TRUE), 2024L)
-})
-
-test_that("ctfdata_list has exactly 4 clusters", {
-  expect_length(cgjrdata::ctfdata_list, 4L)
-})
-
-test_that("ctfdata_list has expected cluster names", {
-  expected <- c(
-    "institutional_environment",
-    "political_institutions",
-    "center_of_government",
-    "sectors_service_delivery"
-  )
-  expect_identical(names(cgjrdata::ctfdata_list), expected)
-})
-
-test_that("ctfdata_list subclusters match expected counts per cluster", {
-  expected_counts <- c(
-    institutional_environment    = 4L,
-    political_institutions       = 1L,
-    center_of_government         = 3L,
-    sectors_service_delivery     = 5L
-  )
-  actual_counts <- purrr::map_int(cgjrdata::ctfdata_list, length)
-  expect_identical(actual_counts, expected_counts)
-})
-
-test_that("ctfdata_list subclusters have required base columns", {
-  required <- c("country_code", "country_name", "year", "score", "var_count", "nonna_count")
-  purrr::iwalk(cgjrdata::ctfdata_list, function(cluster, cluster_name) {
-    purrr::iwalk(cluster, function(tbl, subcluster_name) {
-      missing <- setdiff(required, names(tbl))
-      expect_true(
-        length(missing) == 0L,
-        label = paste0("Missing in ", cluster_name, "/", subcluster_name, ": ",
-                       paste(missing, collapse = ", "))
-      )
-    })
-  })
-})
-
-test_that("regionctf_list has same cluster/subcluster structure as ctfdata_list", {
-  expect_identical(names(cgjrdata::regionctf_list), names(cgjrdata::ctfdata_list))
-  expect_identical(
-    purrr::map(cgjrdata::regionctf_list, names),
-    purrr::map(cgjrdata::ctfdata_list, names)
-  )
-})
-
-test_that("regionctf_list subclusters have region_code, region, year, score columns", {
-  required <- c("region_code", "region", "year", "score")
-  purrr::iwalk(cgjrdata::regionctf_list, function(cluster, cluster_name) {
-    purrr::iwalk(cluster, function(tbl, subcluster_name) {
-      missing <- setdiff(required, names(tbl))
-      expect_true(
-        length(missing) == 0L,
-        label = paste0("Missing in regionctf_list ", cluster_name, "/",
-                       subcluster_name, ": ", paste(missing, collapse = ", "))
-      )
-    })
-  })
-})
-
-test_that("regionctf_list contains expected 8 region codes", {
-  expected_codes <- c("AFE", "AFW", "EAP", "ECA", "LAC", "MENAAP", "NAC", "SAR")
-  actual_codes <- cgjrdata::regionctf_list[[1]][[1]] |>
-    dplyr::distinct(region_code) |>
-    dplyr::pull(region_code) |>
-    sort()
-  expect_identical(actual_codes, sort(expected_codes))
-})
-
-test_that("incomectf_list has same cluster/subcluster structure as ctfdata_list", {
-  expect_identical(names(cgjrdata::incomectf_list), names(cgjrdata::ctfdata_list))
-})
-
-test_that("incomectf_list subclusters have income_group, year, score columns", {
-  required <- c("income_group", "year", "score")
-  purrr::iwalk(cgjrdata::incomectf_list, function(cluster, cluster_name) {
-    purrr::iwalk(cluster, function(tbl, subcluster_name) {
-      missing <- setdiff(required, names(tbl))
-      expect_true(
-        length(missing) == 0L,
-        label = paste0("Missing in incomectf_list ", cluster_name, "/",
-                       subcluster_name, ": ", paste(missing, collapse = ", "))
-      )
-    })
-  })
-})
-
-test_that("incomectf_list contains expected 4 income groups", {
-  expected_groups <- c(
-    "High income", "Low income", "Lower middle income", "Upper middle income"
-  )
-  actual_groups <- cgjrdata::incomectf_list[[1]][[1]] |>
-    dplyr::distinct(income_group) |>
-    dplyr::pull(income_group) |>
-    sort()
-  expect_identical(actual_groups, sort(expected_groups))
-})
-
-test_that("wbcountries has expected columns", {
-  expected_cols <- c(
-    "country_code", "economy", "income_group",
-    "lending_category", "region_code", "region"
-  )
-  missing <- setdiff(expected_cols, names(cgjrdata::wbcountries))
-  expect_true(
-    length(missing) == 0L,
-    label = paste("Missing wbcountries cols:", paste(missing, collapse = ", "))
-  )
-})
-
-test_that("metadata_tbl has expected columns", {
-  expected_cols <- c(
-    "var_name", "variable", "description", "description_short",
-    "source", "cluster", "cluster_num", "subcluster", "subcluster_num"
-  )
-  missing <- setdiff(expected_cols, names(cgjrdata::metadata_tbl))
-  expect_true(
-    length(missing) == 0L,
-    label = paste("Missing metadata_tbl cols:", paste(missing, collapse = ", "))
-  )
-})
-
-test_that("metadata_tbl has exactly 4 distinct clusters", {
-  n_clusters <- cgjrdata::metadata_tbl |>
-    dplyr::distinct(cluster) |>
-    nrow()
-  expect_equal(n_clusters, 4L)
-})
-
-test_that("metadata_tbl has exactly 13 distinct subclusters", {
-  n_subclusters <- cgjrdata::metadata_tbl |>
+test_that("cgjr_taxonomy is a 14-row, 3-level fixed-width schema", {
+  tx <- cgjrdata::cgjr_taxonomy
+  expect_equal(nrow(tx), 14L)
+  expect_named(tx, c(
+    "cluster", "cluster_num", "cluster_name",
+    "subcluster", "subcluster_num", "subcluster_name",
+    "sub_subcluster", "sub_subcluster_num", "sub_subcluster_name"
+  ))
+  expect_equal(dplyr::n_distinct(tx$cluster), 4L)
+  expect_equal(dplyr::n_distinct(tx$subcluster), 11L)
+  # only Public Financial Management branches to a sub_subcluster level
+  branching <- tx |>
+    dplyr::filter(!is.na(sub_subcluster)) |>
     dplyr::distinct(subcluster) |>
-    nrow()
-  expect_equal(n_subclusters, 13L)
+    dplyr::pull(subcluster)
+  expect_identical(branching, "public_financial_management")
+})
+
+test_that("cgjr_ctf has the long indicator-grain contract", {
+  ctf <- cgjrdata::cgjr_ctf
+  expect_named(ctf, c(
+    "unit_level", "unit_code", "unit_name", "year", "ctf_type",
+    "cluster", "subcluster", "sub_subcluster", "leaf",
+    "indicator", "variable", "ctf", "n_inputs", "n_inputs_obs"
+  ))
+  expect_setequal(unique(ctf$ctf_type), c("dynamic", "static"))
+  expect_setequal(unique(ctf$unit_level), c("country", "region", "income_group"))
+  # static rows carry no year; dynamic rows all do
+  expect_true(all(is.na(ctf$year[ctf$ctf_type == "static"])))
+  expect_true(all(!is.na(ctf$year[ctf$ctf_type == "dynamic"])))
+})
+
+test_that("cgjr_ctf country rows are an exact slice of cliaretl (never recomputed)", {
+  skip_if_not_installed("cliaretl")
+  jv <- cgjrdata::cgjr_crosswalk |>
+    dplyr::filter(.data$leaf == "justice_and_rule_of_law", .data$static_eligible) |>
+    dplyr::pull(.data$variable)
+  cgjr_ken <- cgjrdata::cgjr_ctf |>
+    dplyr::filter(.data$leaf == "justice_and_rule_of_law",
+                  .data$ctf_type == "static", .data$unit_code == "KEN")
+  cliaretl_ken <- dplyr::filter(cliaretl::closeness_to_frontier_static,
+                                .data$country_code == "KEN")
+  for (v in jv) {
+    expect_equal(
+      cgjr_ken$ctf[cgjr_ken$variable == v],
+      cliaretl_ken[[v]],
+      tolerance = 1e-12,
+      label = v
+    )
+  }
+})
+
+test_that("empty (leaf, ctf_type) pairs are absent from cgjr_ctf, not scaffolded", {
+  # budget_cycle_and_fiscal_planning: 24 static-eligible indicators, 0 dynamic
+  ctf <- cgjrdata::cgjr_ctf
+  expect_equal(
+    nrow(dplyr::filter(ctf, .data$leaf == "budget_cycle_and_fiscal_planning",
+                       .data$ctf_type == "dynamic")),
+    0L
+  )
+  expect_gt(
+    nrow(dplyr::filter(ctf, .data$leaf == "budget_cycle_and_fiscal_planning",
+                       .data$ctf_type == "static")),
+    0L
+  )
+  # the other three PFM sub-subclusters are empty in both
+  expect_equal(
+    nrow(dplyr::filter(ctf, .data$leaf == "domestic_revenue_mobilization")),
+    0L
+  )
+})
+
+test_that("every taxonomy leaf appears in cgjr_scores' finest-grain filter", {
+  scores <- cgjrdata::cgjr_scores
+  tx <- cgjrdata::cgjr_taxonomy
+  leaves <- dplyr::coalesce(tx$sub_subcluster, tx$subcluster)
+
+  branching <- unique(
+    scores$subcluster[scores$node_level == "sub_subcluster"]
+  )
+  finest <- scores |>
+    dplyr::filter(
+      .data$node_level %in% c("subcluster", "sub_subcluster"),
+      !(.data$node_level == "subcluster" & .data$subcluster %in% branching)
+    )
+  expect_true(all(leaves %in% finest$node))
+})
+
+test_that("wbcountries has the expected columns", {
+  expect_true(all(
+    c("country_code", "economy", "income_group",
+      "lending_category", "region_code", "region") %in%
+      names(cgjrdata::wbcountries)
+  ))
+})
+
+test_that("cgjr_crosswalk carries taxonomy keys and cliaretl eligibility flags", {
+  cw <- cgjrdata::cgjr_crosswalk
+  expect_true(all(
+    c("leaf", "indicator", "variable", "source",
+      "in_cliaretl", "in_dynamic_panel", "in_static_panel",
+      "dynamic_eligible", "static_eligible", "cliaretl_status") %in% names(cw)
+  ))
+  expect_setequal(
+    unique(cw$cliaretl_status),
+    c("resolved", "unresolved")
+  )
 })

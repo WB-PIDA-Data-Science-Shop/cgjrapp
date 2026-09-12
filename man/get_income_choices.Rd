@@ -2,15 +2,14 @@
 % Please edit documentation in R/utils_data.R
 \name{get_income_choices}
 \alias{get_income_choices}
-\title{Get income group choices for the benchmark groups selector}
+\title{WB income-group choices for the comparator selector}
 \usage{
 get_income_choices()
 }
 \value{
-A named character vector: both names and values are the income group
-label strings (e.g. \code{"High income"}).
+Named character vector: names and values are the income-group
+labels (e.g. \code{"High income"}).
 }
 \description{
-Returns a named character vector of World Bank income groups derived from
-\link[cgjrdata:wbcountries]{cgjrdata::wbcountries}, suitable for use in \code{\link[shiny:selectInput]{shiny::selectizeInput()}}.
+WB income-group choices for the comparator selector
 }

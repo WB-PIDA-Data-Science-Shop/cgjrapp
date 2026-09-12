@@ -10,5 +10,14 @@ run_cgjrapp(...)
 \item{...}{Additional arguments passed to \code{\link[shiny:shinyApp]{shiny::shinyApp()}}.}
 }
 \description{
-Starts the Growth and Jobs Institutional Review dashboard.
+Starts the Country Jobs and Growth Report institutional benchmarking
+dashboard.
+}
+\details{
+Tabs: Home (Slice 6, carried over); Benchmarking - the nested
+\code{cgjr_taxonomy} accordion of live leaf cards (\code{\link[=mod_benchmark_dashboard_ui]{mod_benchmark_dashboard_ui()}},
+Slices 0-2); Data Download (\code{\link[=mod_data_ui]{mod_data_ui()}}, Slice 5); AI Report
+(\code{\link[=mod_report_ui]{mod_report_ui()}}, Slice 5). The sidebar selection is
+\code{\link[=mod_country_selection_ui]{mod_country_selection_ui()}} (Slice 3): base unit + comparator picker over
+every \code{cgjr_ctf} unit, Apply gate, save/load.
 }

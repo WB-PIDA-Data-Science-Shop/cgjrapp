@@ -1,179 +1,113 @@
-# ── .fmt_score() ──────────────────────────────────────────────────────────────
+# -- .fmt_score() / .fmt_score_row() ---
 
-test_that(".fmt_score() formats numeric to percentage", {
-  expect_equal(.fmt_score(0.5),   "50%")
-  expect_equal(.fmt_score(0),     "0%")
-  expect_equal(.fmt_score(1),     "100%")
-  expect_equal(.fmt_score(0.756), "75.6%")
-})
-
-test_that(".fmt_score() returns 'N/A' for NA", {
+test_that(".fmt_score formats to percent, N/A for NA", {
+  expect_equal(.fmt_score(0.5),    "50%")
+  expect_equal(.fmt_score(0.756),  "75.6%")
   expect_equal(.fmt_score(NA_real_), "N/A")
 })
 
-# ── .fmt_score_row() ──────────────────────────────────────────────────────────
-
-test_that(".fmt_score_row() formats a named vector as a slash-separated string", {
-  scores <- c("Overall Score" = 0.6, "Integrity" = 0.4)
-  result <- .fmt_score_row(scores)
-  expect_true(grepl("Overall Score: 60%",  result))
-  expect_true(grepl("Integrity: 40%",      result))
-  expect_true(grepl("/",                   result))
+test_that(".fmt_score_row joins a named vector", {
+  r <- .fmt_score_row(c("Overall" = 0.6, "Integrity" = NA_real_))
+  expect_match(r, "Overall: 60%")
+  expect_match(r, "Integrity: N/A")
+  expect_match(r, "/", fixed = TRUE)
 })
 
-test_that(".fmt_score_row() handles NA values gracefully", {
-  scores <- c("A" = NA_real_, "B" = 0.3)
-  result <- .fmt_score_row(scores)
-  expect_true(grepl("N/A", result))
-  expect_true(grepl("30%", result))
+# -- .taxonomy_outline() ---
+
+test_that(".taxonomy_outline is generated from cgjr_taxonomy, not hardcoded", {
+  o <- cgjrapp:::.taxonomy_outline()
+  tx <- cgjrdata::cgjr_taxonomy
+  # cluster names appear as upper-case headers; the rest verbatim
+  for (nm in unique(tx$cluster_name)) expect_match(o, toupper(nm), fixed = TRUE)
+  for (nm in unique(c(tx$subcluster_name,
+                      stats::na.omit(tx$sub_subcluster_name)))) {
+    expect_match(o, nm, fixed = TRUE)
+  }
+  first <- toupper(tx$cluster_name[tx$cluster_num == min(tx$cluster_num)][[1]])
+  last  <- toupper(tx$cluster_name[tx$cluster_num == max(tx$cluster_num)][[1]])
+  expect_lt(regexpr(first, o, fixed = TRUE), regexpr(last, o, fixed = TRUE))
 })
 
-# ── .summarise_scores() ───────────────────────────────────────────────────────
+# -- .summarise_scores() ---
 
-.make_scores_tbl <- function() {
+.mk_live <- function() {
   tibble::tibble(
-    Entity                           = c("Ghana", "Nigeria", "Ghana"),
-    Year                             = c(2023L, 2023L, 2022L),
-    overall_score                    = c(0.5, 0.4, 0.45),
-    institutional_environment_score  = c(0.6, 0.5, 0.55),
-    political_institutions_score     = c(0.4, 0.35, 0.38),
-    center_of_government_score       = c(0.5, 0.45, 0.48),
-    sectors_service_delivery_score   = c(0.55, 0.42, 0.50)
+    Cluster = c("A", "A", "B"),
+    Leaf    = c("Integrity", "Justice", "PFM"),
+    Composite = c(0.4, 0.62, NA_real_),
+    `Indicators used`     = c(5L, 16L, 0L),
+    `Indicators observed` = c(5L, 16L, 0L)
   )
 }
 
-test_that(".summarise_scores() uses the most recent year per entity", {
-  tbl    <- .make_scores_tbl()
-  result <- .summarise_scores(tbl, "Ghana")
-  # Ghana's latest year is 2023; should appear once per entity line
-  lines <- strsplit(result, "\n", fixed = TRUE)[[1]]
-  ghana_line <- grep("Ghana", lines, value = TRUE)
-  expect_length(ghana_line, 1L)
-  expect_true(grepl("2023", ghana_line))
+test_that(".summarise_scores groups by cluster and marks empty leaves", {
+  s <- cgjrapp:::.summarise_scores(.mk_live())
+  expect_match(s, "**A**", fixed = TRUE)
+  expect_match(s, "Integrity: 40%", fixed = TRUE)
+  expect_match(s, "Justice: 62%", fixed = TRUE)
+  expect_match(s, "PFM: N/A (no eligible indicators)", fixed = TRUE)
 })
 
-test_that(".summarise_scores() returns fallback string when no score cols present", {
-  tbl <- tibble::tibble(Entity = "X", Year = 2023L, other_col = 1)
-  result <- .summarise_scores(tbl, "X")
-  expect_equal(result, "(No scores data available.)")
+test_that(".summarise_scores handles an empty table", {
+  expect_match(cgjrapp:::.summarise_scores(.mk_live()[0, ]), "No scores available")
 })
 
-test_that(".summarise_scores() includes all entities", {
-  tbl    <- .make_scores_tbl()
-  result <- .summarise_scores(tbl, "Ghana")
-  expect_true(grepl("Ghana",   result))
-  expect_true(grepl("Nigeria", result))
+# -- .cgjr_system_prompt() ---
+
+test_that(".cgjr_system_prompt names the four current clusters, not CLIAR's", {
+  sp <- cgjrapp:::.cgjr_system_prompt()
+  expect_gt(nchar(sp), 500L)
+  for (cn in unique(cgjrdata::cgjr_taxonomy$cluster_name)) {
+    expect_match(sp, toupper(cn), fixed = TRUE)
+  }
 })
 
-# ── .cgjr_system_prompt() ────────────────────────────────────────────────────
-
-test_that(".cgjr_system_prompt() returns a non-empty string", {
-  sp <- .cgjr_system_prompt()
-  expect_type(sp, "character")
-  expect_true(nchar(sp) > 100L)
+test_that(".cgjr_system_prompt states the CLIAR departures and the empty leaves", {
+  sp <- cgjrapp:::.cgjr_system_prompt()
+  expect_match(sp, "departures from the CLIAR", fixed = TRUE)
+  expect_match(sp, "Justice and Rule of Law", fixed = TRUE)
+  expect_match(sp, "merges", fixed = TRUE)
+  expect_match(sp, "not yet measured", fixed = TRUE)
+  # and that the composite is selection-dependent, not precomputed
+  expect_match(sp, "depends on the comparison group", fixed = TRUE)
 })
 
-test_that(".cgjr_system_prompt() references all four CGJR thematic areas", {
-  sp <- .cgjr_system_prompt()
-  expect_true(grepl("INSTITUTIONAL ENVIRONMENT", sp, fixed = TRUE))
-  expect_true(grepl("POLITICAL INSTITUTIONS",    sp, fixed = TRUE))
-  expect_true(grepl("CENTER OF GOVERNMENT",      sp, fixed = TRUE))
-  expect_true(grepl("SECTORS",                   sp, fixed = TRUE))
-})
+# -- build_cgjr_prompt() ---
 
-# ── build_cgjr_prompt() ───────────────────────────────────────────────────────
-
-test_that("build_cgjr_prompt() returns a named list with system and user", {
-  tbl    <- .make_scores_tbl()
-  result <- build_cgjr_prompt(
-    primary_iso  = "GHA",
-    primary_name = "Ghana",
-    scores_tbl   = tbl,
-    year_range   = c(2013L, 2023L)
+test_that("build_cgjr_prompt returns list(system, user) with the key facts", {
+  p <- build_cgjr_prompt(
+    base_name = "Ghana", base_unit = "GHA",
+    scores_tbl = .mk_live(), year_range = c(2014L, 2022L),
+    ctf_type = "dynamic", comparators = c("Nigeria", "Kenya")
   )
-  expect_type(result, "list")
-  expect_named(result, c("system", "user"))
-  expect_type(result$system, "character")
-  expect_type(result$user,   "character")
+  expect_named(p, c("system", "user"))
+  expect_match(p$user, "Ghana (GHA)", fixed = TRUE)
+  expect_match(p$user, "even years 2014-2022", fixed = TRUE)
+  expect_match(p$user, "Nigeria, Kenya", fixed = TRUE)
+  expect_match(p$user, "Justice: 62%", fixed = TRUE)
 })
 
-test_that("build_cgjr_prompt() includes country name and ISO", {
-  tbl    <- .make_scores_tbl()
-  result <- build_cgjr_prompt("GHA", "Ghana", tbl, c(2013L, 2023L))
-  expect_true(grepl("Ghana", result$user, fixed = TRUE))
-  expect_true(grepl("GHA",   result$user, fixed = TRUE))
+test_that("build_cgjr_prompt says so when there are no comparators", {
+  p <- build_cgjr_prompt("Ghana", "GHA", .mk_live(), c(2013L, 2024L))
+  expect_match(p$user, "No comparators selected", fixed = TRUE)
 })
 
-test_that("build_cgjr_prompt() includes year range", {
-  tbl    <- .make_scores_tbl()
-  result <- build_cgjr_prompt("GHA", "Ghana", tbl, c(2015L, 2022L))
-  expect_true(grepl("2015", result$user, fixed = TRUE))
-  expect_true(grepl("2022", result$user, fixed = TRUE))
-})
+# -- format_report_docx() ---
 
-test_that("build_cgjr_prompt() lists peer countries when provided", {
-  tbl    <- .make_scores_tbl()
-  result <- build_cgjr_prompt(
-    "GHA", "Ghana", tbl, c(2013L, 2023L),
-    peer_isos = c("NGA", "KEN")
-  )
-  expect_true(grepl("NGA", result$user, fixed = TRUE))
-  expect_true(grepl("KEN", result$user, fixed = TRUE))
-})
-
-test_that("build_cgjr_prompt() says no comparators when none provided", {
-  tbl    <- .make_scores_tbl()
-  result <- build_cgjr_prompt("GHA", "Ghana", tbl, c(2013L, 2023L))
-  expect_true(grepl("No comparators selected", result$user, fixed = TRUE))
-})
-
-test_that("build_cgjr_prompt() lists regions and income groups when provided", {
-  tbl    <- .make_scores_tbl()
-  result <- build_cgjr_prompt(
-    "GHA", "Ghana", tbl, c(2013L, 2023L),
-    region_codes  = "SSA",
-    income_groups = "Lower middle income"
-  )
-  expect_true(grepl("SSA",                 result$user, fixed = TRUE))
-  expect_true(grepl("Lower middle income", result$user, fixed = TRUE))
-})
-
-# ── format_report_docx() ─────────────────────────────────────────────────────
-
-test_that("format_report_docx() returns an rdocx object", {
-  doc <- format_report_docx("## Intro\n\nSome text.", "Ghana")
+test_that("format_report_docx builds an rdocx and writes a file", {
+  tmp <- withr::local_tempfile(fileext = ".docx")
+  doc <- format_report_docx("## Section\n\nParagraph.\n- item", "Testland")
   expect_s3_class(doc, "rdocx")
-})
-
-test_that("format_report_docx() writes to a file without error", {
-  tmp  <- withr::local_tempfile(fileext = ".docx")
-  doc  <- format_report_docx("## Section\n\nParagraph.", "Ghana")
   expect_no_error(print(doc, target = tmp))
-  expect_true(file.exists(tmp))
   expect_gt(file.size(tmp), 0L)
+  combined <- paste(officer::docx_summary(doc)$text, collapse = " ")
+  expect_match(combined, "Testland", fixed = TRUE)
 })
 
-test_that("format_report_docx() handles empty report text", {
-  doc <- format_report_docx("", "Ghana")
-  expect_s3_class(doc, "rdocx")
-})
-
-test_that("format_report_docx() handles all heading levels", {
-  md  <- "# H1\n## H2\n### H3\nNormal paragraph.\n- List item"
-  doc <- format_report_docx(md, "Ghana")
-  expect_s3_class(doc, "rdocx")
-})
-
-test_that("format_report_docx() includes country name in document content", {
-  doc     <- format_report_docx("Some text.", "Testland")
-  summary <- officer::docx_summary(doc)
-  combined <- paste(summary$text, collapse = " ")
-  expect_true(grepl("Testland", combined, fixed = TRUE))
-})
-
-test_that("format_report_docx() uses provided date", {
-  doc     <- format_report_docx("text", "Ghana", report_date = "2025-01-15")
-  summary <- officer::docx_summary(doc)
-  combined <- paste(summary$text, collapse = " ")
-  expect_true(grepl("January 15, 2025", combined, fixed = TRUE))
+test_that("format_report_docx uses the provided date and handles empty text", {
+  doc <- format_report_docx("text", "Ghana", report_date = "2025-01-15")
+  expect_match(paste(officer::docx_summary(doc)$text, collapse = " "),
+               "January 15, 2025", fixed = TRUE)
+  expect_s3_class(format_report_docx("", "Ghana"), "rdocx")
 })

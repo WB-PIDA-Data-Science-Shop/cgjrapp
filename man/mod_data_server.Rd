@@ -2,31 +2,19 @@
 % Please edit documentation in R/mod_data.R
 \name{mod_data_server}
 \alias{mod_data_server}
-\title{Data download tab server}
+\title{Data Download tab server}
 \usage{
-mod_data_server(
-  id,
-  primary_iso,
-  peer_isos,
-  region_codes,
-  income_groups,
-  year_range
-)
+mod_data_server(id, base_unit, comparison_units, year_range)
 }
 \arguments{
-\item{id}{Module namespace ID.}
+\item{id}{Module id.}
 
-\item{primary_iso}{Reactive string — ISO3 of the focal country.}
-
-\item{peer_isos}{Reactive character vector — peer ISO3 codes.}
-
-\item{region_codes}{Reactive character vector — selected region codes.}
-
-\item{income_groups}{Reactive character vector — selected income groups.}
-
-\item{year_range}{Reactive integer vector of length 2.}
+\item{base_unit, comparison_units, year_range}{Reactives from
+\code{\link[=mod_country_selection_server]{mod_country_selection_server()}}.}
+}
+\value{
+Invisibly \code{NULL}.
 }
 \description{
-Registers \code{\link[DT:dataTableOutput]{DT::renderDT()}} outputs for the three data sub-tabs.
-All outputs are lazy (rendered only when the sub-tab is first visited).
+Data Download tab server
 }

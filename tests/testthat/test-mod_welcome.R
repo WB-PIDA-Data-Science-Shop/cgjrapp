@@ -1,7 +1,7 @@
 # test-mod_welcome.R
 # Tests for mod_welcome_ui(), mod_welcome_server(), and the %||% operator.
 
-# ── %||% operator ────────────────────────────────────────────────────────────
+# -- %||% operator ---
 
 test_that("%||% returns left side when not NULL", {
   expect_equal("a" %||% "b", "a")
@@ -26,7 +26,7 @@ test_that("%||% works with a length-10 vector without error", {
   expect_equal(v %||% "fallback", v)
 })
 
-# ── UI structure tests ────────────────────────────────────────────────────────
+# -- UI structure tests ---
 
 test_that("mod_welcome_ui returns a shiny.tag object", {
   ui <- mod_welcome_ui("test")
@@ -38,7 +38,7 @@ test_that("mod_welcome_ui contains a nav_panel with value 'home'", {
   expect_equal(ui$attribs$`data-value`, "home")
 })
 
-# ── Server tests ──────────────────────────────────────────────────────────────
+# -- Server tests ---
 
 test_that("mod_welcome_server runs without error", {
   expect_no_error(

@@ -2,37 +2,19 @@
 % Please edit documentation in R/mod_report.R
 \name{mod_report_server}
 \alias{mod_report_server}
-\title{AI-Generated Institutional Report -- Server}
+\title{AI Report tab server}
 \usage{
-mod_report_server(
-  id,
-  primary_iso,
-  peer_isos,
-  region_codes,
-  income_groups,
-  year_range
-)
+mod_report_server(id, base_unit, comparison_units, threshold, year_range)
 }
 \arguments{
-\item{id}{Shiny module namespace ID.}
+\item{id}{Module id.}
 
-\item{primary_iso}{Reactive returning the primary country ISO3 code.}
-
-\item{peer_isos}{Reactive returning a character vector of peer ISO3 codes.}
-
-\item{region_codes}{Reactive returning a character vector of region codes.}
-
-\item{income_groups}{Reactive returning a character vector of income group
-labels.}
-
-\item{year_range}{Reactive returning an integer vector of length 2:
-\code{c(min_year, max_year)}.}
+\item{base_unit, comparison_units, threshold, year_range}{Reactives from
+\code{\link[=mod_country_selection_server]{mod_country_selection_server()}}.}
 }
 \value{
-Called for side effects; returns \code{NULL} invisibly.
+Invisibly \code{NULL}.
 }
 \description{
-Handles the report generation workflow: builds the prompt, streams the LLM
-response token-by-token into a reactive value, renders the accumulated text
-as Markdown HTML, and provides a Word download.
+AI Report tab server
 }

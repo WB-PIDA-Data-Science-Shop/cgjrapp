@@ -17,7 +17,7 @@ clear, user-friendly error message if the endpoint is unreachable, rather
 than silently failing during streaming.
 
 Returns \code{FALSE} for any error (connection refused, timeout, DNS failure,
-HTTP error response), and \code{TRUE} only when the server responds at all —
+HTTP error response), and \code{TRUE} only when the server responds at all -
 even a 404 counts as "reachable" because it indicates the server is running.
 }
 \details{

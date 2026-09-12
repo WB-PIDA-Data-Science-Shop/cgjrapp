@@ -2,22 +2,16 @@
 % Please edit documentation in R/mod_report.R
 \name{mod_report_ui}
 \alias{mod_report_ui}
-\title{AI-Generated Institutional Report -- UI}
+\title{AI Report tab UI}
 \usage{
 mod_report_ui(id)
 }
 \arguments{
-\item{id}{Shiny module namespace ID.}
+\item{id}{Module id.}
 }
 \value{
-A \code{\link[bslib:nav-items]{bslib::nav_panel()}} object.
+A \code{\link[bslib:nav_panel]{bslib::nav_panel()}}.
 }
 \description{
-Produces a \code{nav_panel} containing a card with:
-\itemize{
-\item A "Generate Report" action button
-\item A streaming text output area (updates progressively as tokens arrive)
-\item A disclaimer notice
-\item A download button for the Word document (enabled after generation)
-}
+AI Report tab UI
 }

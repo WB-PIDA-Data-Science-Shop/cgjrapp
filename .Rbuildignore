@@ -6,6 +6,10 @@
 ^prompts$
 ^copilot_logs$
 ^\.current_task$
+^dev$
+^REMODEL_PLAN\.md$
+^rsconnect$
+^\.vscode$
 
 ^LICENSE\.md$
 ^README\.Rmd$

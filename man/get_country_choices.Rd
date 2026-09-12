@@ -2,16 +2,14 @@
 % Please edit documentation in R/utils_data.R
 \name{get_country_choices}
 \alias{get_country_choices}
-\title{Get country choices for the primary country selector}
+\title{Country choices for the base-unit selector}
 \usage{
 get_country_choices()
 }
 \value{
-A named character vector: names are country names, values are ISO3
-codes.
+Names are country names, values are ISO3 codes.
 }
 \description{
-Returns a named character vector of all countries in
-\link[cgjrdata:institutional_averages_tbl]{cgjrdata::institutional_averages_tbl}, sorted alphabetically by country
-name. Suitable for use in \code{\link[shiny:selectInput]{shiny::selectInput()}}.
+Named character vector of every country in \link[cgjrdata:wbcountries]{cgjrdata::wbcountries}, sorted
+by name, for \code{\link[shiny:selectInput]{shiny::selectInput()}}.
 }

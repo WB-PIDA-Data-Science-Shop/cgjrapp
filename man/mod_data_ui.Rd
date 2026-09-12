@@ -2,23 +2,16 @@
 % Please edit documentation in R/mod_data.R
 \name{mod_data_ui}
 \alias{mod_data_ui}
-\title{Data download tab UI}
+\title{Data Download tab UI}
 \usage{
 mod_data_ui(id)
 }
 \arguments{
-\item{id}{Module namespace ID.}
+\item{id}{Module id.}
 }
 \value{
-A \code{\link[bslib:nav-items]{bslib::nav_panel()}}.
+A \code{\link[bslib:nav_panel]{bslib::nav_panel()}}.
 }
 \description{
-Generates a \code{\link[bslib:nav-items]{bslib::nav_panel()}} with three sub-tabs:
-\describe{
-\item{Scores}{Cluster and subcluster CTF score averages.}
-\item{CTF Indicators}{Rescaled 0-1 indicator values.}
-\item{Raw Data}{Original source-scale indicator values.}
-}
-All tables are driven by the shared sidebar filters and include
-CSV / Excel / Copy download buttons.
+Data Download tab UI
 }

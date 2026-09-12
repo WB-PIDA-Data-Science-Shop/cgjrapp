@@ -2,17 +2,17 @@
 % Please edit documentation in R/utils_data.R
 \name{key_to_title}
 \alias{key_to_title}
-\title{Convert snake_case cluster or subcluster key to a display title}
+\title{Convert a snake_case taxonomy key to a display title}
 \usage{
 key_to_title(key)
 }
 \arguments{
-\item{key}{Character scalar, e.g. \code{"institutional_environment"}.}
+\item{key}{Character vector, e.g. \code{"institutional_environment"}.}
 }
 \value{
-Character scalar, e.g. \code{"Institutional Environment"}.
+Character vector, e.g. \code{"Institutional Environment"}.
 }
 \description{
-Replaces underscores with spaces and applies title case. Used to generate
-tab labels from \code{ctfdata_list} keys without hardcoding display strings.
+Underscores to spaces, then title case. Used for readable node labels
+without hardcoding display strings.
 }

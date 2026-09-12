@@ -10,7 +10,7 @@ mod_welcome_ui(id)
 \item{id}{Module namespace ID.}
 }
 \value{
-A \code{\link[bslib:nav-items]{bslib::nav_panel()}} containing the landing page.
+A \code{\link[bslib:nav_panel]{bslib::nav_panel()}} containing the landing page.
 }
 \description{
 Home tab UI

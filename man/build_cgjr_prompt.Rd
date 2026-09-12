@@ -2,38 +2,36 @@
 % Please edit documentation in R/utils_report.R
 \name{build_cgjr_prompt}
 \alias{build_cgjr_prompt}
-\title{Build the user-side LLM prompt for the CGJR institutional chapter}
+\title{Build the LLM prompt for the CGJR institutional chapter}
 \usage{
 build_cgjr_prompt(
-  primary_iso,
-  primary_name,
+  base_name,
+  base_unit,
   scores_tbl,
   year_range,
-  peer_isos = character(0),
-  region_codes = character(0),
-  income_groups = character(0)
+  ctf_type = "static",
+  comparators = character(0),
+  taxonomy = cgjrdata::cgjr_taxonomy
 )
 }
 \arguments{
-\item{primary_iso}{Character scalar -- ISO3 code of the focal country.}
+\item{base_name}{Character - display name of the base unit.}
 
-\item{primary_name}{Character scalar -- display name of the focal country.}
+\item{base_unit}{Character - its \code{unit_code}.}
 
-\item{scores_tbl}{Tibble from \code{\link[=get_scores_table]{get_scores_table()}}.}
+\item{scores_tbl}{A tibble from \code{\link[=export_live_scores]{export_live_scores()}}.}
 
-\item{year_range}{Integer vector of length 2: \code{c(min_year, max_year)}.}
+\item{year_range}{Integer length-2 vector.}
 
-\item{peer_isos}{Character vector of peer ISO3 codes (may be empty).}
+\item{ctf_type}{\code{"static"} or \code{"dynamic"} - labels the analysis basis.}
 
-\item{region_codes}{Character vector of selected region codes (may be empty).}
+\item{comparators}{Character vector of comparator \code{unit_name}s (or codes).}
 
-\item{income_groups}{Character vector of selected income group labels (may
-be empty).}
+\item{taxonomy}{Passed through to the system prompt.}
 }
 \value{
-A named list with elements \code{system} (character) and \code{user} (character).
+A named list \code{list(system=, user=)}.
 }
 \description{
-Combines the scores summary, peer/benchmark comparisons, and instructions
-into a structured prompt.
+Build the LLM prompt for the CGJR institutional chapter
 }

@@ -3,7 +3,7 @@
 # logo in card_header, welcome title + markdown in card_body.
 # No sidebar, no data.
 
-# -- UI ------------------------------------------------------------------
+# -- UI ---
 
 #' Home tab UI
 #'
