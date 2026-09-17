@@ -45,18 +45,6 @@ test_that("export_live_scores has one row per taxonomy leaf, empty leaves scaffo
                round(fam$score[fam$unit_code == BASE], 4))
 })
 
-test_that("export_reference_scores is cgjr_scores filtered, never the live numbers", {
-  d <- export_reference_scores(BASE, COMPS, "static")
-  expect_true(all(c("Node level", "Node", "Score") %in% names(d)))
-  expect_setequal(unique(d$`Node level`),
-                  c("overall", "cluster", "subcluster", "sub_subcluster"))
-  # it is a slice of cgjr_scores, not a recomputation
-  ref_overall <- cgjrdata::cgjr_scores |>
-    dplyr::filter(unit_code == "GHA", ctf_type == "static", node_level == "overall")
-  expect_equal(d$Score[d$Unit == "Ghana" & d$`Node level` == "overall"],
-               round(ref_overall$score, 4))
-})
-
 test_that("export_indicator_catalogue is the full crosswalk, display-tidied", {
   d <- export_indicator_catalogue()
   expect_equal(nrow(d), nrow(cgjrdata::cgjr_crosswalk))

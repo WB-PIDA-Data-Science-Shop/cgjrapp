@@ -10,8 +10,12 @@
 #                - leaf card
 #
 # A "leaf card" is the same fragment everywhere: a static/dynamic toggle, the
-# live benchmarking plot, the live composite score, and a notes line. It is
-# drawn once per finest-grain node - `coalesce(sub_subcluster, subcluster)`.
+# live benchmarking plot, a notes line, and (static view only) a "Show notes"
+# switch that reveals which indicators were excluded and why - a port of
+# cliarappak's plot_notes_function() / "Show notes" switch. No composite
+# score - cliarappak's benchmarking plots don't show one either, only the
+# plot. Drawn once per finest-grain node - `coalesce(sub_subcluster,
+# subcluster)`.
 #
 # Nothing here hardcodes a cluster / subcluster / leaf name, count or depth.
 # The walk is a fixed three-step descent because `cgjr_taxonomy` is a
@@ -25,26 +29,29 @@
 
 # The card body rendered at every finest-grain node.
 .leaf_card_ui <- function(ns, key, label) {
+  ct_id    <- paste0("ctf_type_", key)
+  notes_id <- paste0("show_notes_", key)
   shiny::tagList(
     shiny::radioButtons(
-      ns(paste0("ctf_type_", key)),
+      ns(ct_id),
       label = NULL,
       choices = c("Static (latest snapshot)" = "static",
                   "Dynamic (over time)" = "dynamic"),
       selected = "static",
       inline = TRUE
     ),
-    bslib::layout_columns(
-      col_widths = c(9, 3),
-      plotly::plotlyOutput(ns(paste0("plot_", key)), height = "560px"),
-      bslib::value_box(
-        title = "Composite score",
-        value = shiny::textOutput(ns(paste0("score_", key))),
-        showcase = bsicons::bs_icon("bullseye"),
-        theme = "primary"
+    plotly::plotlyOutput(ns(paste0("plot_", key)), height = "560px"),
+    shiny::htmlOutput(ns(paste0("note_", key))),
+    # "Show notes" toggle, static view only - cliarappak parity: its
+    # plot_notes_function() returns no notes for the dynamic view either.
+    shiny::conditionalPanel(
+      sprintf("input.%s == 'static'", ct_id), ns = ns,
+      bslib::input_switch(ns(notes_id), "Show notes", value = FALSE),
+      shiny::conditionalPanel(
+        sprintf("input.%s == true", notes_id), ns = ns,
+        shiny::htmlOutput(ns(paste0("plot_notes_", key)))
       )
-    ),
-    shiny::htmlOutput(ns(paste0("note_", key)))
+    )
   )
 }
 
@@ -179,21 +186,6 @@ mod_benchmark_dashboard_server <- function(id, taxonomy,
       }) |>
         shiny::bindCache(cache_key())
 
-      # live composite for the focal unit; latest year in the dynamic view
-      fam <- shiny::reactive({
-        s <- sel()
-        if (nrow(s$data) == 0L || !enough_comparators()) return(NULL)
-        f <- compute_family_average_app(
-          s$data, base_unit(), comparison_units(), type = s$ctf_type
-        ) |>
-          dplyr::filter(.data$unit_code %in% base_unit())
-        if (s$ctf_type == "dynamic") {
-          f <- dplyr::slice_max(f, .data$year, n = 1L, with_ties = FALSE)
-        }
-        f
-      }) |>
-        shiny::bindCache(cache_key())
-
       output[[paste0("plot_", leaf)]] <- plotly::renderPlotly({
         s <- sel()
         shiny::validate(
@@ -210,16 +202,9 @@ mod_benchmark_dashboard_server <- function(id, taxonomy,
       }) |>
         shiny::bindCache(cache_key())
 
-      output[[paste0("score_", leaf)]] <- shiny::renderText({
-        f <- fam()
-        if (is.null(f) || nrow(f) == 0L || is.na(f$score[[1]])) "n/a"
-        else sprintf("%.3f", f$score[[1]])
-      })
-
       output[[paste0("note_", leaf)]] <- shiny::renderUI({
         s <- sel()
         if (nrow(s$data) == 0L) return(NULL)
-        f <- fam()
         n_ind <- dplyr::n_distinct(s$data$variable)
         base_line <- sprintf(
           "%d indicator%s; %d comparator%s; %s thresholds.",
@@ -228,25 +213,19 @@ mod_benchmark_dashboard_server <- function(id, taxonomy,
           if (length(comparison_units()) == 1L) "" else "s",
           threshold()
         )
-        # Composite wiped by the missing-data screen (common in the dynamic
-        # view for small leaves - see build-plan Slice 1 / option A).
-        if (s$ctf_type == "dynamic" &&
-            (is.null(f) || nrow(f) == 0L || is.na(f$score[[1]]))) {
-          shiny::tags$p(
-            class = "text-muted small",
-            base_line,
-            shiny::tags$br(),
-            sprintf(
-              paste0("Composite unavailable for the trend view: every ",
-                     "indicator has a coverage gap for %s over %d-%d. ",
-                     "Switch to Static for a composite score."),
-              base_unit(), year_range()[[1]], year_range()[[2]]
-            )
-          )
-        } else {
-          shiny::tags$p(class = "text-muted small", base_line)
-        }
+        shiny::tags$p(class = "text-muted small", base_line)
       })
+
+      # "Show notes" panel - static view only (see .leaf_card_ui()).
+      output[[paste0("plot_notes_", leaf)]] <- shiny::renderUI({
+        s <- sel()
+        if (s$ctf_type != "static" || nrow(s$data) == 0L || !enough_comparators()) {
+          return(NULL)
+        }
+        excluded <- excluded_indicators(s$data, base_unit(), comparison_units())
+        plot_notes(base_unit(), comparison_units(), s$data, excluded)
+      }) |>
+        shiny::bindCache(cache_key())
     })
 
     invisible(NULL)

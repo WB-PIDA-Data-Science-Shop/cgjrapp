@@ -259,3 +259,42 @@ as_interactive_plot <- function(p, height = NULL) {
   plotly::ggplotly(p, tooltip = "text", height = height) |>
     plotly::config(displayModeBar = FALSE)
 }
+
+#' Build the "Show notes" text for a static benchmarking chart
+#'
+#' Port of `cliarappak::plot_notes_function()` for the static view only -
+#' cliarappak shows no notes for the dynamic view either, so there is no
+#' `_dyn` counterpart.
+#'
+#' @param base_unit,comparison_units Character `unit_code`(s) - the same
+#'   selection passed to [def_quantiles()].
+#' @param ctf_long The same long CTF slice passed to [def_quantiles()]; used
+#'   only to resolve `unit_code` to `unit_name` for display.
+#' @param excluded Character vector of excluded indicator display names, from
+#'   [excluded_indicators()].
+#'
+#' @return An [shiny::HTML()] string.
+#' @seealso [excluded_indicators()], [static_plot()]
+#' @export
+plot_notes <- function(base_unit, comparison_units, ctf_long, excluded) {
+  lookup <- dplyr::distinct(ctf_long, .data$unit_code, .data$unit_name)
+  name_of <- function(codes) {
+    nm <- lookup$unit_name[match(codes, lookup$unit_code)]
+    dplyr::coalesce(nm, codes)   # fall back to the code if unresolved
+  }
+
+  txt <- sprintf(
+    "Notes:<br><br>%s compared to %s.",
+    paste(name_of(base_unit), collapse = ", "),
+    paste(name_of(comparison_units), collapse = ", ")
+  )
+  if (length(excluded) > 0L) {
+    txt <- paste0(
+      txt,
+      "<br><br>The following indicators are not considered because the base",
+      " unit has no information for them, or because of low variance: ",
+      paste(excluded, collapse = ", "), "."
+    )
+  }
+  shiny::HTML(txt)
+}

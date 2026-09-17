@@ -5,6 +5,23 @@ test_that("run_cgjrapp() assembles a shiny app", {
   expect_s3_class(app, "shiny.appobj")
 })
 
+test_that("nav order is Home, Country Selection, Benchmarking, Data, AI Report - no sidebar", {
+  # page_navbar()'s ui is built inside run_cgjrapp() and only reachable via
+  # the assembled shiny.appobj's internal http handler, so check the source
+  # directly: no sidebar argument, and the nav modules appear in this order.
+  src <- paste(deparse(body(run_cgjrapp)), collapse = "\n")
+  expect_no_match(src, "sidebar", fixed = TRUE)
+
+  pos <- vapply(
+    c('mod_welcome_ui("welcome")', 'mod_country_selection_ui("selection"',
+      'title = "Benchmarking"', 'mod_data_ui("data")', 'mod_report_ui("report")'),
+    function(needle) regexpr(needle, src, fixed = TRUE)[[1]],
+    numeric(1)
+  )
+  expect_true(all(pos > 0))
+  expect_true(all(diff(pos) > 0))   # strictly increasing == that exact order
+})
+
 test_that("default selection (GHA vs region-mates) renders a real leaf card", {
   # what the selection module hands the dashboard on load
   base  <- "GHA"
@@ -22,18 +39,7 @@ test_that("default selection (GHA vs region-mates) renders a real leaf card", {
     ),
     {
       session$setInputs(ctf_type_justice_and_rule_of_law = "static")
-      expect_match(output$score_justice_and_rule_of_law, "^0\\.[0-9]{3}$")
       expect_match(output$`plot_justice_and_rule_of_law`, "plotly")
-
-      # the composite equals a direct call to the ported family average
-      slice <- filter_unit_data("justice_and_rule_of_law", "static",
-                                unique(c(base, comps)))
-      fam <- compute_family_average_app(slice, base, comps, type = "static")
-      expect_equal(
-        as.numeric(output$score_justice_and_rule_of_law),
-        round(fam$score[fam$unit_code == base], 3),
-        tolerance = 1e-9
-      )
     }
   )
 })

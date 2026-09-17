@@ -3,12 +3,14 @@
 #' Starts the Country Jobs and Growth Report institutional benchmarking
 #' dashboard.
 #'
-#' Tabs: Home (Slice 6, carried over); Benchmarking - the nested
-#' `cgjr_taxonomy` accordion of live leaf cards ([mod_benchmark_dashboard_ui()],
-#' Slices 0-2); Data Download ([mod_data_ui()], Slice 5); AI Report
-#' ([mod_report_ui()], Slice 5). The sidebar selection is
-#' [mod_country_selection_ui()] (Slice 3): base unit + comparator picker over
-#' every `cgjr_ctf` unit, Apply gate, save/load.
+#' Tabs: Home (Slice 6, carried over); Country Selection
+#' ([mod_country_selection_ui()], Slice 3) - base unit + comparator picker
+#' over every `cgjr_ctf` unit, Apply gate, save/load, laid out card-by-card
+#' like the first half of `cliarappak`'s benchmarking page rather than an
+#' always-visible sidebar; Benchmarking - the nested `cgjr_taxonomy`
+#' accordion of live leaf cards ([mod_benchmark_dashboard_ui()], Slices 0-2);
+#' Data Download ([mod_data_ui()], Slice 5); AI Report ([mod_report_ui()],
+#' Slice 5).
 #'
 #' @param ... Additional arguments passed to [shiny::shinyApp()].
 #' @export
@@ -26,12 +28,10 @@ run_cgjrapp <- function(...) {
   ui <- bslib::page_navbar(
     id = "pagenavbar", title = "CGJR", theme = app_theme,
     navbar_options = bslib::navbar_options(underline = TRUE),
-    sidebar = bslib::sidebar(
-      id = "main_sidebar", title = "Selection", width = 320,
-      mod_country_selection_ui("selection", default_base = default_base)
-    ),
 
     mod_welcome_ui("welcome"),
+
+    mod_country_selection_ui("selection", default_base = default_base),
 
     bslib::nav_panel(
       title = "Benchmarking", value = "benchmarking",
@@ -51,11 +51,6 @@ run_cgjrapp <- function(...) {
     mod_welcome_server("welcome")
 
     sel <- mod_country_selection_server("selection", default_base = default_base)
-
-    shiny::observeEvent(input$pagenavbar, {
-      bslib::sidebar_toggle("main_sidebar",
-                            open = !identical(input$pagenavbar, "home"))
-    }, ignoreInit = TRUE)
 
     mod_benchmark_dashboard_server(
       "bench",

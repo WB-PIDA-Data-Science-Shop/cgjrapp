@@ -6,15 +6,10 @@
 # ctf_type / year_range). The dynamic view uses even years only, matching the
 # dashboard (cliarappak parity).
 #
-# The "Scores" tab shows TWO tables that must not be conflated (build plan,
-# constraint 6):
-#   * export_live_scores()      - the per-selection composite the dashboard
-#                                 shows: screened + averaged for THIS selection.
-#   * export_reference_scores() - cgjrdata::cgjr_scores, a precomputed
-#                                 reference. Median cross-country aggregation,
-#                                 no selection-dependent screening - it will
-#                                 NOT match the live numbers for a non-default
-#                                 selection, by design.
+# export_live_scores() is the per-selection composite: screened + averaged for
+# THIS comparison group. Not displayed as its own table anywhere (cliarappak's
+# benchmarking tab doesn't show one either) - it exists to feed the AI Report
+# prompt (mod_report.R / utils_report.R).
 # ---
 
 .taxonomy_name_cols <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
@@ -110,10 +105,12 @@ export_raw_table <- function(base_unit, comparison_units = character(0),
     )
 }
 
-#' Live per-selection composite scores (what the dashboard shows)
+#' Live per-selection composite scores (feeds the AI Report prompt)
 #'
 #' One row per leaf (per year for the dynamic view): the screened + averaged
-#' composite for the base unit, from [compute_family_average_app()].
+#' composite for the base unit, from [compute_family_average_app()]. Not
+#' displayed as its own table anywhere in the app - `mod_report.R` is the only
+#' caller, using it to build the AI Report's system prompt.
 #'
 #' @inheritParams export_ctf_table
 #' @return A tibble with `Cluster`, `Leaf`, `Year` (dynamic), `Composite`,
@@ -160,43 +157,6 @@ export_live_scores <- function(base_unit, comparison_units,
   out$`Indicators used`     <- dplyr::coalesce(out$`Indicators used`, 0L)
   out$`Indicators observed` <- dplyr::coalesce(out$`Indicators observed`, 0L)
   out
-}
-
-#' Precomputed reference scores (`cgjrdata::cgjr_scores`)
-#'
-#' The reference rollup - **not** the interactive numbers. Filtered to the
-#' selected units and `ctf_type`; every `node_level` (overall / cluster /
-#' subcluster / sub_subcluster) is kept.
-#'
-#' @inheritParams export_ctf_table
-#' @param scores Data override for tests.
-#' @return A tibble, one row per unit x node (x year for dynamic).
-#' @export
-export_reference_scores <- function(base_unit, comparison_units,
-                                    ctf_type = c("static", "dynamic"),
-                                    year_range = NULL,
-                                    scores = cgjrdata::cgjr_scores) {
-  ctf_type <- match.arg(ctf_type)
-  units <- unique(c(base_unit, comparison_units))
-  out <- dplyr::filter(scores, .data$unit_code %in% units,
-                       .data$ctf_type == !!ctf_type)
-  if (identical(ctf_type, "dynamic") && !is.null(year_range)) {
-    rng <- range(year_range, na.rm = TRUE)
-    out <- dplyr::filter(out, .data$year >= rng[[1]], .data$year <= rng[[2]],
-                         .data$year %% 2L == 0L)
-  }
-  out |>
-    dplyr::arrange(.data$unit_name, .data$node_level, .data$node, .data$year) |>
-    dplyr::transmute(
-      Unit          = .data$unit_name,
-      `Unit type`   = .data$unit_level,
-      Year          = .data$year,
-      `Node level`  = .data$node_level,
-      Node          = key_to_title(.data$node),
-      Score         = round(.data$score, 4),
-      `Children`    = .data$n_inputs,
-      `Children obs` = .data$n_inputs_obs
-    )
 }
 
 #' The indicator catalogue (`cgjrdata::cgjr_crosswalk`, tidied for display)

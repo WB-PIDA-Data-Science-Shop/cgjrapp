@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_exports.R
 \name{export_live_scores}
 \alias{export_live_scores}
-\title{Live per-selection composite scores (what the dashboard shows)}
+\title{Live per-selection composite scores (feeds the AI Report prompt)}
 \usage{
 export_live_scores(
   base_unit,
@@ -28,5 +28,7 @@ A tibble with \code{Cluster}, \code{Leaf}, \code{Year} (dynamic), \code{Composit
 }
 \description{
 One row per leaf (per year for the dynamic view): the screened + averaged
-composite for the base unit, from \code{\link[=compute_family_average_app]{compute_family_average_app()}}.
+composite for the base unit, from \code{\link[=compute_family_average_app]{compute_family_average_app()}}. Not
+displayed as its own table anywhere in the app - \code{mod_report.R} is the only
+caller, using it to build the AI Report's system prompt.
 }

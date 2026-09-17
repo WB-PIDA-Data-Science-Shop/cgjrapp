@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_country_selection.R
 \name{mod_country_selection_ui}
 \alias{mod_country_selection_ui}
-\title{Country / comparator selection module UI}
+\title{Country / comparator selection page UI}
 \usage{
 mod_country_selection_ui(id, default_base = "GHA", ctf = cgjrdata::cgjr_ctf)
 }
@@ -14,8 +14,8 @@ mod_country_selection_ui(id, default_base = "GHA", ctf = cgjrdata::cgjr_ctf)
 \item{ctf}{Long CTF tibble the picker choices are built from.}
 }
 \value{
-A \link[shiny:tagList]{shiny::tagList} intended for a \code{\link[bslib:sidebar]{bslib::sidebar()}}.
+A \code{\link[bslib:nav_panel]{bslib::nav_panel()}}.
 }
 \description{
-Country / comparator selection module UI
+Country / comparator selection page UI
 }

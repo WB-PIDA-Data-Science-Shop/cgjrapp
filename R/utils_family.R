@@ -139,6 +139,43 @@ def_quantiles <- function(ctf_long, base_unit, comparison_units,
   dplyr::filter(q, !.data$variable %in% lv)
 }
 
+#' Indicator display names excluded from a static benchmarking chart
+#'
+#' Port of `cliarappak::missing_var()`, combined with the same low-variance
+#' screen [def_quantiles()] applies, so the "Show notes" toggle can list what
+#' didn't make it into the static plot: indicators the base unit has no data
+#' for (any `NA`), plus indicators flat across the selection once those are
+#' dropped - the exact two screens [def_quantiles()] itself applies, in the
+#' same order.
+#'
+#' Static view only. `def_quantiles_dyn()` screens row-wise (per
+#' unit-indicator-year), which doesn't reduce to one excluded/kept list per
+#' indicator the way the static screen does - matching `cliarappak`'s own
+#' `plot_notes_function()`, which returns no notes for the dynamic view.
+#'
+#' @inheritParams def_quantiles
+#' @return Character vector of indicator display names (the `indicator`
+#'   column of `ctf_long`) dropped by [def_quantiles()] for this base unit +
+#'   comparison set. Empty if nothing was dropped.
+#' @seealso [def_quantiles()]
+#' @export
+excluded_indicators <- function(ctf_long, base_unit, comparison_units) {
+  keep_units <- unique(c(base_unit, comparison_units))
+  dat <- dplyr::filter(ctf_long, .data$unit_code %in% keep_units)
+
+  drop_missing <- .missing_for_base(dat, base_unit, rule = "any")
+  after_missing <- dplyr::filter(dat, !.data$variable %in% drop_missing)
+  drop_lv <- .low_variance(after_missing)
+
+  dropped_vars <- union(drop_missing, drop_lv)
+  dat |>
+    dplyr::filter(.data$variable %in% dropped_vars) |>
+    dplyr::distinct(.data$variable, .data$indicator) |>
+    dplyr::filter(!is.na(.data$indicator)) |>
+    dplyr::pull(.data$indicator) |>
+    unique()
+}
+
 #' @rdname def_quantiles
 #' @export
 def_quantiles_dyn <- function(ctf_long, base_unit, comparison_units,

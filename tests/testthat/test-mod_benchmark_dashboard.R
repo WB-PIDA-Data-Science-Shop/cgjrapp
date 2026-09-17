@@ -18,7 +18,15 @@ test_that("mod_benchmark_dashboard_ui builds an accordion for the given taxonomy
   expect_match(html, "bench-plot_justice_and_rule_of_law")
 })
 
-test_that("server renders a real static leaf card: plot + composite score", {
+test_that("leaf card has a 'Show notes' switch, no composite-score value_box", {
+  html <- as.character(mod_benchmark_dashboard_ui("bench", taxonomy = taxo_one))
+  expect_match(html, 'id="bench-show_notes_justice_and_rule_of_law"', fixed = TRUE)
+  expect_match(html, "Show notes", fixed = TRUE)
+  expect_no_match(html, "bslib-value-box")
+  expect_no_match(html, "Composite score")
+})
+
+test_that("server renders a real static leaf card: plot + note", {
   shiny::testServer(
     mod_benchmark_dashboard_server,
     args = list(
@@ -31,24 +39,63 @@ test_that("server renders a real static leaf card: plot + composite score", {
     {
       session$setInputs(ctf_type_justice_and_rule_of_law = "static")
 
-      score_txt <- output$score_justice_and_rule_of_law
-      expect_match(score_txt, "^0\\.[0-9]{3}$")             # a real number, not "n/a"
-
       # renderPlotly() serialises to a JSON string under testServer
       p <- output$`plot_justice_and_rule_of_law`
       expect_type(p, "character")
       expect_gt(nchar(p), 100L)
       expect_match(p, "plotly")
 
-      # composite score matches a direct call to the ported family average
+      note <- paste(as.character(output$note_justice_and_rule_of_law), collapse = " ")
+      expect_match(note, "indicators?;.*comparators?;.*Default thresholds")
+    }
+  )
+})
+
+test_that("Show notes panel: static view lists the units and any excluded indicators", {
+  shiny::testServer(
+    mod_benchmark_dashboard_server,
+    args = list(
+      taxonomy         = taxo_one,
+      base_unit        = shiny::reactive("GHA"),
+      comparison_units = shiny::reactive(COMPS),
+      threshold        = shiny::reactive("Default"),
+      year_range       = shiny::reactive(c(2013L, 2024L))
+    ),
+    {
+      session$setInputs(ctf_type_justice_and_rule_of_law = "static",
+                        show_notes_justice_and_rule_of_law = TRUE)
+
+      notes_html <- paste(as.character(output$plot_notes_justice_and_rule_of_law),
+                          collapse = " ")
+      expect_match(notes_html, "Ghana compared to", fixed = TRUE)
+
+      # matches a direct call to excluded_indicators() for the same selection
       slice <- filter_unit_data("justice_and_rule_of_law", "static",
                                 unique(c("GHA", COMPS)))
-      fam <- compute_family_average_app(slice, "GHA", COMPS, type = "static")
-      expect_equal(
-        as.numeric(score_txt),
-        round(fam$score[fam$unit_code == "GHA"], 3),
-        tolerance = 1e-9
-      )
+      expected <- excluded_indicators(slice, "GHA", COMPS)
+      if (length(expected) > 0L) {
+        expect_match(notes_html, "not considered", fixed = TRUE)
+        for (nm in expected) expect_match(notes_html, nm, fixed = TRUE)
+      } else {
+        expect_no_match(notes_html, "not considered")
+      }
+    }
+  )
+})
+
+test_that("Show notes panel is empty in the dynamic view (cliarappak parity)", {
+  shiny::testServer(
+    mod_benchmark_dashboard_server,
+    args = list(
+      taxonomy         = taxo_one,
+      base_unit        = shiny::reactive("GHA"),
+      comparison_units = shiny::reactive(COMPS),
+      threshold        = shiny::reactive("Default"),
+      year_range       = shiny::reactive(c(2013L, 2024L))
+    ),
+    {
+      session$setInputs(ctf_type_justice_and_rule_of_law = "dynamic")
+      expect_null(output$plot_notes_justice_and_rule_of_law)
     }
   )
 })
@@ -65,7 +112,6 @@ test_that("server switches to the dynamic view without error", {
     ),
     {
       session$setInputs(ctf_type_justice_and_rule_of_law = "dynamic")
-      expect_match(output$score_justice_and_rule_of_law, "^(0\\.[0-9]{3}|n/a)$")
       expect_type(output$`plot_justice_and_rule_of_law`, "character")
     }
   )
@@ -87,7 +133,6 @@ test_that("an empty (leaf, ctf_type) card renders the no-data message, not an er
     ),
     {
       session$setInputs(ctf_type_budget_cycle_and_fiscal_planning = "dynamic")
-      expect_identical(output$score_budget_cycle_and_fiscal_planning, "n/a")
       expect_error(output$`plot_budget_cycle_and_fiscal_planning`, "No data available")
     }
   )
@@ -166,7 +211,6 @@ test_that("a fully-empty sub_subcluster (domestic_revenue_mobilization) still ge
     ),
     {
       session$setInputs(ctf_type_domestic_revenue_mobilization = "dynamic")
-      expect_identical(output$score_domestic_revenue_mobilization, "n/a")
       expect_error(output$`plot_domestic_revenue_mobilization`, "No data available")
     }
   )
@@ -184,7 +228,6 @@ test_that("fewer than 2 comparators: card asks for a selection, doesn't error", 
     ),
     {
       session$setInputs(ctf_type_justice_and_rule_of_law = "static")
-      expect_identical(output$score_justice_and_rule_of_law, "n/a")
       expect_error(output$`plot_justice_and_rule_of_law`, "at least 2 comparators")
     }
   )
@@ -226,12 +269,10 @@ test_that("caching is transparent: toggle ctf_type and back -> identical output"
     ),
     {
       session$setInputs(ctf_type_justice_and_rule_of_law = "static")
-      s1 <- output$score_justice_and_rule_of_law
       p1 <- output$`plot_justice_and_rule_of_law`
 
       session$setInputs(ctf_type_justice_and_rule_of_law = "dynamic")
       session$setInputs(ctf_type_justice_and_rule_of_law = "static")
-      expect_identical(output$score_justice_and_rule_of_law, s1)
       expect_identical(output$`plot_justice_and_rule_of_law`, p1)
     }
   )
@@ -268,7 +309,7 @@ test_that("install_benchmark_cache sets an LRU app cache bindCache can find", {
   expect_identical(shiny::getShinyOption("cache"), cache)
 })
 
-test_that("dynamic composite that the screen wipes gets an explanatory note", {
+test_that("a leaf with a base-unit coverage gap in the dynamic view still renders", {
   tx <- cgjrdata::cgjr_taxonomy
   shiny::testServer(
     mod_benchmark_dashboard_server,
@@ -279,19 +320,16 @@ test_that("dynamic composite that the screen wipes gets an explanatory note", {
       year_range = shiny::reactive(c(2013L, 2024L))
     ),
     {
-      # service_delivery: KEN has a year gap in every indicator -> composite NA
+      # service_delivery: KEN has a year gap in every indicator (screen wipes
+      # the composite in compute_family_average_app(), but the plot itself
+      # still renders - indicator dots survive the 100%-NA rule).
       session$setInputs(ctf_type_service_delivery = "dynamic")
-      expect_identical(output$score_service_delivery, "n/a")
-      note <- paste(as.character(output$note_service_delivery), collapse = " ")
-      expect_true(grepl("Composite unavailable for the trend view", note))
-      expect_true(grepl("2013", note))
-      # the plot itself still renders (indicator dots survive the 100%-NA rule)
       expect_type(output$`plot_service_delivery`, "character")
     }
   )
 })
 
-test_that("server handles the full taxonomy: populated leaves score, empty ones show a dash", {
+test_that("server handles the full taxonomy: populated leaves plot, empty ones show a message", {
   tx <- cgjrdata::cgjr_taxonomy
   shiny::testServer(
     mod_benchmark_dashboard_server,
@@ -307,10 +345,8 @@ test_that("server handles the full taxonomy: populated leaves score, empty ones 
         ctf_type_justice_and_rule_of_law     = "static",  # populated
         ctf_type_domestic_revenue_mobilization = "static" # empty in both types
       )
-      expect_match(output$score_justice_and_rule_of_law, "^0\\.[0-9]{3}$")
       expect_type(output$`plot_justice_and_rule_of_law`, "character")
 
-      expect_identical(output$score_domestic_revenue_mobilization, "n/a")
       expect_error(output$`plot_domestic_revenue_mobilization`, "No data available")
     }
   )

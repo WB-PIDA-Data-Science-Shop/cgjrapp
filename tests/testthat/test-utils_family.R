@@ -147,6 +147,67 @@ for (leaf in PARITY_LEAVES) {
   }
 }
 
+# --- excluded_indicators(): parity vs cliarappak's missing_var() + low_variance() ---
+# ("Show notes" feature) - the exact composition mod_benchmark.R's server uses
+# to build plot_notes_function()'s `miss_var` argument for the static plot.
+
+for (leaf in PARITY_LEAVES) {
+  test_that(sprintf("excluded_indicators parity vs cliarappak [%s / static]", leaf), {
+    ref <- load_cliarappak_ref()
+    fx  <- fixture(leaf, "static")
+    wide <- cgjr_slice_to_wide(fx$slice, type = "static")
+
+    ref_missing <- ref$missing_var(
+      wide, fx$base_name, fx$country_list, fx$comp_names, fx$vars, fx$variable_names
+    )
+    ref_lv_codes <- ref$low_variance(
+      wide, fx$base_name, fx$country_list, fx$comp_names, fx$vars, fx$variable_names
+    )
+    ref_lv_names <- fx$variable_names$var_name[
+      match(ref_lv_codes, fx$variable_names$variable)
+    ]
+    ref_excluded <- unique(c(ref_missing, ref_lv_names))
+    ref_excluded <- ref_excluded[!is.na(ref_excluded)]
+
+    port_excluded <- excluded_indicators(fx$slice, BASE, fx$comps)
+
+    expect_setequal(port_excluded, ref_excluded)
+  })
+}
+
+test_that("excluded_indicators returns character(0) when nothing is dropped", {
+  clean <- tibble::tribble(
+    ~unit_code, ~variable, ~indicator,     ~ctf,
+    "AAA",      "v1",      "Indicator 1",  0.2,
+    "BBB",      "v1",      "Indicator 1",  0.5,
+    "CCC",      "v1",      "Indicator 1",  0.8,
+    "AAA",      "v2",      "Indicator 2",  0.9,
+    "BBB",      "v2",      "Indicator 2",  0.4,
+    "CCC",      "v2",      "Indicator 2",  0.1
+  )
+  expect_identical(excluded_indicators(clean, "AAA", c("BBB", "CCC")),
+                    character(0))
+})
+
+test_that("excluded_indicators names a missing and a flat indicator", {
+  mixed <- tibble::tribble(
+    ~unit_code, ~variable, ~indicator,        ~ctf,
+    "AAA",      "v1",      "Has data",        0.2,
+    "BBB",      "v1",      "Has data",        0.5,
+    "CCC",      "v1",      "Has data",        0.8,
+    "AAA",      "v2",      "Missing for base", NA_real_,
+    "BBB",      "v2",      "Missing for base", 0.4,
+    "CCC",      "v2",      "Missing for base", 0.1,
+    "AAA",      "v3",      "Flat indicator",  0.5,
+    "BBB",      "v3",      "Flat indicator",  0.5,
+    "CCC",      "v3",      "Flat indicator",  0.5
+  )
+  expect_setequal(
+    excluded_indicators(mixed, "AAA", c("BBB", "CCC")),
+    c("Missing for base", "Flat indicator")
+  )
+})
+
 # --- Slice 1: the functions are leaf-agnostic ---
 # Handed a multi-leaf slice, each function must produce exactly what running it
 # per leaf and stacking the results would (given the same unit selection).

@@ -30,6 +30,16 @@ test_that("UI renders the pickers, gate and save/load", {
   }
 })
 
+test_that("UI is its own nav page, card-laid-out like cliarappak's selection UI", {
+  ui <- mod_country_selection_ui("selection")
+  expect_s3_class(ui, "shiny.tag")
+  expect_identical(ui$attribs$`data-value`, "selection")
+  html <- as.character(ui)
+  expect_match(html, "Country Selection", fixed = TRUE)
+  expect_match(html, "Comparator countries", fixed = TRUE)
+  expect_match(html, "Benchmarking options", fixed = TRUE)
+})
+
 test_that("applied state holds the default selection before any Apply click", {
   shiny::testServer(mod_country_selection_server, args = list(default_base = "GHA"), {
     session$setInputs(base = "KEN", comparators = c("NGA", "SEN", "CIV"),

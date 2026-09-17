@@ -1,10 +1,18 @@
 # ---
-# Country / comparator selection module.
+# Country / comparator selection page.
 #
-# Port of cliarappak::mod_benchmark.R's selection UI/logic (not its plots):
+# Port of cliarappak::mod_benchmark.R's selection UI/logic (not its plots) -
 # a base unit, a comparator set, threshold and year-range controls, an
-# "Apply selection" gate, and save/load of the selection. Unlike cliarappak,
-# countries / regions / income groups are equal citizens in one picker over
+# "Apply selection" gate, and save/load of the selection - as its own nav
+# page (between Home and Benchmarking), card-laid-out like the first half of
+# cliarappak's benchmarking page (base unit + save/load up top, a "Comparator
+# countries" card, a "Benchmarking options" card), rather than cliarappak's
+# always-visible sidebar. Left out deliberately: cliarappak's per-family
+# picker (cgjrapp's Benchmarking tab already shows the whole taxonomy at
+# once, so there's nothing to pick between), custom comparison groups,
+# guided tour, and rank-instead-of-value/best-to-worst toggles - none of
+# which exist anywhere else in cgjrapp either. Unlike cliarappak, countries /
+# regions / income groups are equal citizens in one picker over
 # distinct(cgjr_ctf, unit_level, unit_code, unit_name).
 #
 # Returns a "bench"-style list of Apply-gated reactives that
@@ -37,53 +45,69 @@
 .YEAR_MIN <- 2013L
 .YEAR_MAX <- 2024L
 
-#' Country / comparator selection module UI
+#' Country / comparator selection page UI
 #'
 #' @param id Module id.
 #' @param default_base Character `unit_code` to pre-select as the base unit.
 #' @param ctf Long CTF tibble the picker choices are built from.
-#' @return A [shiny::tagList] intended for a [bslib::sidebar()].
+#' @return A [bslib::nav_panel()].
 #' @export
 mod_country_selection_ui <- function(id, default_base = "GHA",
                                      ctf = cgjrdata::cgjr_ctf) {
   ns <- shiny::NS(id)
   choices <- .unit_choices(ctf)
 
-  shiny::tagList(
-    shiny::selectizeInput(
-      ns("base"), "Base unit",
-      choices = choices, selected = default_base,
-      options = list(placeholder = "A country, region or income group")
-    ),
-    shiny::selectizeInput(
-      ns("comparators"), "Comparators",
-      choices = choices, selected = .default_comparators(default_base),
-      multiple = TRUE,
-      options = list(placeholder = "Countries, regions, income groups")
-    ),
-    shiny::helpText(shiny::textOutput(ns("comp_count"), inline = TRUE)),
-    shiny::selectInput(
-      ns("threshold"), "Benchmarking thresholds",
-      choices = c("Default (25th / 50th pctile)" = "Default",
-                  "Terciles (33rd / 66th)"       = "Terciles")
-    ),
-    shiny::sliderInput(
-      ns("year_range"), "Year range (dynamic view, even years only)",
-      min = .YEAR_MIN, max = .YEAR_MAX, value = c(.YEAR_MIN, .YEAR_MAX),
-      step = 1L, sep = ""
-    ),
-    shiny::uiOutput(ns("apply_ui")),
-    shiny::hr(),
-    shiny::tags$div(
-      class = "d-flex align-items-center gap-2",
-      shiny::downloadButton(ns("save_sel"), "Save",
-                            class = "btn-sm btn-outline-secondary"),
+  bslib::nav_panel(
+    title = "Country Selection", icon = shiny::icon("flag"), value = "selection",
+
+    bslib::layout_columns(
+      col_widths = c(8, 4),
+      shiny::selectizeInput(
+        ns("base"), "Base unit",
+        choices = choices, selected = default_base,
+        options = list(placeholder = "A country, region or income group")
+      ),
       shiny::tags$div(
-        class = "flex-grow-1",
-        shiny::fileInput(ns("load_sel"), NULL, accept = ".rds",
-                         buttonLabel = "Load...", placeholder = "")
+        class = "d-flex align-items-end h-100 gap-2 pb-3",
+        shiny::downloadButton(ns("save_sel"), "Save",
+                              class = "btn-sm btn-outline-secondary"),
+        shiny::tags$div(
+          class = "flex-grow-1",
+          shiny::fileInput(ns("load_sel"), NULL, accept = ".rds",
+                           buttonLabel = "Load...", placeholder = "")
+        )
       )
-    )
+    ),
+
+    bslib::card(
+      bslib::card_header("Comparator countries"),
+      shiny::selectizeInput(
+        ns("comparators"), "Comparators",
+        choices = choices, selected = .default_comparators(default_base),
+        multiple = TRUE, width = "100%",
+        options = list(placeholder = "Countries, regions, income groups")
+      ),
+      shiny::helpText(shiny::textOutput(ns("comp_count"), inline = TRUE))
+    ),
+
+    bslib::card(
+      bslib::card_header("Benchmarking options"),
+      bslib::layout_columns(
+        col_widths = c(6, 6),
+        shiny::selectInput(
+          ns("threshold"), "Benchmarking thresholds",
+          choices = c("Default (25th / 50th pctile)" = "Default",
+                      "Terciles (33rd / 66th)"       = "Terciles")
+        ),
+        shiny::sliderInput(
+          ns("year_range"), "Year range (dynamic view, even years only)",
+          min = .YEAR_MIN, max = .YEAR_MAX, value = c(.YEAR_MIN, .YEAR_MAX),
+          step = 1L, sep = ""
+        )
+      )
+    ),
+
+    shiny::uiOutput(ns("apply_ui"))
   )
 }
 
@@ -120,11 +144,11 @@ mod_country_selection_server <- function(id, default_base = "GHA") {
     output$apply_ui <- shiny::renderUI({
       if (ready()) {
         shiny::actionButton(ns("apply"), "Apply selection",
-                            class = "btn-primary w-100", icon = shiny::icon("check"))
+                            class = "btn-primary btn-lg", icon = shiny::icon("check"))
       } else {
         shiny::actionButton(ns("apply"),
                             "Pick a base unit and 2+ comparators",
-                            class = "btn-secondary w-100", disabled = TRUE)
+                            class = "btn-secondary btn-lg", disabled = TRUE)
       }
     })
 
