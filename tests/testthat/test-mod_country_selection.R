@@ -21,6 +21,62 @@ test_that(".default_comparators returns the base country's region-mates", {
   expect_true(all(comp_region == gha_region))
 })
 
+test_that(".expand_to_countries passes countries through unchanged", {
+  expect_setequal(cgjrapp:::.expand_to_countries(c("GHA", "NGA")), c("GHA", "NGA"))
+})
+
+test_that(".expand_to_countries swaps a region code for its member countries", {
+  wb <- cgjrdata::wbcountries
+  expected <- wb$country_code[!is.na(wb$region_code) & wb$region_code == "AFE"]
+  got <- cgjrapp:::.expand_to_countries("AFE")
+  expect_gt(length(got), 5L)
+  expect_setequal(got, expected)
+  expect_false("AFE" %in% got)   # the region code itself is never kept
+})
+
+test_that(".expand_to_countries swaps an income-group slug for its member countries (matched on label, not slug)", {
+  wb <- cgjrdata::wbcountries
+  expected <- wb$country_code[!is.na(wb$income_group) & wb$income_group == "High income"]
+  got <- cgjrapp:::.expand_to_countries("high_income")
+  expect_gt(length(got), 5L)
+  expect_setequal(got, expected)
+})
+
+test_that(".expand_to_countries unions a mix of countries, a region and an income group", {
+  got <- cgjrapp:::.expand_to_countries(c("GHA", "AFE", "high_income"))
+  wb <- cgjrdata::wbcountries
+  expect_true("GHA" %in% got)
+  expect_true(all(wb$country_code[!is.na(wb$region_code) & wb$region_code == "AFE"] %in% got))
+  expect_true(all(wb$country_code[!is.na(wb$income_group) & wb$income_group == "High income"] %in% got))
+})
+
+test_that("picking a region as a comparator expands it to member countries, not a single unit", {
+  # comps_live()/comparison_units() re-derive the expansion straight from
+  # input$comparators (see mod_country_selection.R), so this holds even
+  # though testServer's MockShinySession can't verify the cosmetic
+  # updateSelectizeInput() widget-display sync (it has no sendInputMessage()).
+  shiny::testServer(mod_country_selection_server, args = list(default_base = "GHA"), {
+    session$setInputs(base = "GHA", comparators = "AFE")
+    session$setInputs(apply = 1)
+    got <- session$returned$comparison_units()
+    expect_false("AFE" %in% got)
+    wb <- cgjrdata::wbcountries
+    expect_setequal(
+      got,
+      setdiff(wb$country_code[!is.na(wb$region_code) & wb$region_code == "AFE"], "GHA")
+    )
+  })
+})
+
+test_that("the base unit picker can hold more than one country", {
+  shiny::testServer(mod_country_selection_server, args = list(default_base = "GHA"), {
+    session$setInputs(base = c("GHA", "KEN"), comparators = c("NGA", "SEN", "CIV"))
+    session$setInputs(apply = 1)
+    expect_setequal(session$returned$base_unit(), c("GHA", "KEN"))
+    expect_setequal(session$returned$comparison_units(), c("NGA", "SEN", "CIV"))
+  })
+})
+
 test_that("UI renders the pickers, gate and save/load", {
   html <- as.character(mod_country_selection_ui("selection"))
   for (piece in c("selection-base", "selection-comparators", "selection-threshold",

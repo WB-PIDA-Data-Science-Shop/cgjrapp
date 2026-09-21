@@ -233,6 +233,28 @@ test_that("fewer than 2 comparators: card asks for a selection, doesn't error", 
   )
 })
 
+test_that("dynamic view rejects a multi-unit base selection (cliarappak parity)", {
+  tx <- cgjrdata::cgjr_taxonomy
+  shiny::testServer(
+    mod_benchmark_dashboard_server,
+    args = list(
+      taxonomy = tx, base_unit = shiny::reactive(c("GHA", "KEN")),
+      comparison_units = shiny::reactive(COMPS),
+      threshold = shiny::reactive("Default"),
+      year_range = shiny::reactive(c(2013L, 2024L))
+    ),
+    {
+      session$setInputs(ctf_type_justice_and_rule_of_law = "dynamic")
+      expect_error(output$`plot_justice_and_rule_of_law`,
+                  "single base unit")
+
+      # the static view for the same leaf is unaffected
+      session$setInputs(ctf_type_justice_and_rule_of_law = "static")
+      expect_type(output$`plot_justice_and_rule_of_law`, "character")
+    }
+  )
+})
+
 test_that("dynamic view uses even years only (cliarappak parity)", {
   tx <- cgjrdata::cgjr_taxonomy
   shiny::testServer(

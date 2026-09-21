@@ -47,6 +47,23 @@ test_that("server: unreachable LLM endpoint surfaces a clear error", {
   )
 })
 
+test_that("server rejects a multi-unit base selection cleanly", {
+  shiny::testServer(
+    mod_report_server,
+    args = list(
+      base_unit = shiny::reactive(c("GHA", "KEN")),   # multi-base, elsewhere valid
+      comparison_units = shiny::reactive(COMPS),
+      threshold = shiny::reactive("Default"),
+      year_range = shiny::reactive(c(2013L, 2024L))
+    ),
+    {
+      session$setInputs(generate = 1)
+      expect_match(r_error(), "exactly one base unit")
+      expect_false(r_gen())
+    }
+  )
+})
+
 test_that("the report prompt is buildable from a real selection", {
   # what the server feeds the LLM
   scores <- export_live_scores("GHA", COMPS, "static")

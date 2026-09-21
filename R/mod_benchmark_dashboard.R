@@ -131,7 +131,9 @@ mod_benchmark_dashboard_ui <- function(id, taxonomy = cgjrdata::cgjr_taxonomy) {
 #'
 #' @param id Module id (must match the UI).
 #' @param taxonomy Same taxonomy passed to [mod_benchmark_dashboard_ui()].
-#' @param base_unit reactive() -> character scalar `unit_code` (focal unit).
+#' @param base_unit reactive() -> character vector of focal `unit_code`(s).
+#'   The dynamic view is restricted to exactly one (cliarappak parity); the
+#'   static view supports several, each drawn with its own point shape.
 #' @param comparison_units reactive() -> character vector of comparison
 #'   `unit_code`s.
 #' @param threshold reactive() -> `"Default"` or `"Terciles"`.
@@ -158,7 +160,7 @@ mod_benchmark_dashboard_server <- function(id, taxonomy,
       cache_key <- shiny::reactive(list(
         leaf,
         input[[ct_in]] %||% "static",
-        base_unit(),
+        sort(base_unit()),
         sort(comparison_units()),
         threshold(),
         year_range()
@@ -192,7 +194,11 @@ mod_benchmark_dashboard_server <- function(id, taxonomy,
           shiny::need(enough_comparators(),
                       "Pick a base unit and at least 2 comparators, then Apply."),
           shiny::need(nrow(s$data) > 0L,
-                      sprintf("No data available for %s (%s).", label, s$ctf_type))
+                      sprintf("No data available for %s (%s).", label, s$ctf_type)),
+          # cliarappak parity: a trend line doesn't generalize to multiple
+          # base units the way the static view's per-unit shape does.
+          shiny::need(s$ctf_type != "dynamic" || length(base_unit()) == 1L,
+                      "Dynamic view is available only when a single base unit is selected.")
         )
         plot_fn <- if (s$ctf_type == "dynamic") static_plot_dyn else static_plot
         as_interactive_plot(

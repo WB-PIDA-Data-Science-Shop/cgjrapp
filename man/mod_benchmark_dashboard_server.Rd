@@ -18,7 +18,9 @@ mod_benchmark_dashboard_server(
 
 \item{taxonomy}{Same taxonomy passed to \code{\link[=mod_benchmark_dashboard_ui]{mod_benchmark_dashboard_ui()}}.}
 
-\item{base_unit}{reactive() -> character scalar \code{unit_code} (focal unit).}
+\item{base_unit}{reactive() -> character vector of focal \code{unit_code}(s).
+The dynamic view is restricted to exactly one (cliarappak parity); the
+static view supports several, each drawn with its own point shape.}
 
 \item{comparison_units}{reactive() -> character vector of comparison
 \code{unit_code}s.}

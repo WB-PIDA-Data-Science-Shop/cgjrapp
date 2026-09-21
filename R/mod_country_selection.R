@@ -9,11 +9,23 @@
 # countries" card, a "Benchmarking options" card), rather than cliarappak's
 # always-visible sidebar. Left out deliberately: cliarappak's per-family
 # picker (cgjrapp's Benchmarking tab already shows the whole taxonomy at
-# once, so there's nothing to pick between), custom comparison groups,
+# once, so there's nothing to pick between), custom comparison groups, the
+# separate "groups" shortcut + toggle-revealed country checklist widgets,
 # guided tour, and rank-instead-of-value/best-to-worst toggles - none of
-# which exist anywhere else in cgjrapp either. Unlike cliarappak, countries /
-# regions / income groups are equal citizens in one picker over
-# distinct(cgjr_ctf, unit_level, unit_code, unit_name).
+# which exist anywhere else in cgjrapp either.
+#
+# Two pieces ARE now cliarappak parity (2026-09-21), not a departure:
+#   - Base unit is multi-select, restricted to actual countries - never a
+#     region/income-group aggregate row - matching cliarappak's `country`
+#     picker exactly.
+#   - Comparators stay a single combined picker over countries/regions/
+#     income groups (a deliberate simplification of cliarappak's two-widget
+#     "groups" + checkbox-list UI), but picking a region or income group is
+#     purely a shortcut: .expand_to_countries() immediately swaps it for its
+#     member country codes, so a region is NEVER passed to the methodology
+#     layer as a single atomic comparator - only real countries are, exactly
+#     as cliarappak's `observeEvent(input$groups, ...)` does for its
+#     `countries` checkbox list.
 #
 # Returns a "bench"-style list of Apply-gated reactives that
 # mod_benchmark_dashboard_server() consumes.
@@ -41,6 +53,39 @@
   setdiff(wb$country_code[!is.na(wb$region_code) & wb$region_code == reg[[1]]], base_iso)
 }
 
+# Expand any region / income-group unit_codes in `codes` into their member
+# country codes; country codes pass through unchanged. A group is always a
+# shortcut, never a comparator unit in its own right (cliarappak parity: its
+# `groups` picker only ever pre-checks `countries`, and `def_quantiles()` is
+# always fed individual countries). Selecting several groups unions their
+# members, matching cliarappak's own "union of the groups" semantics.
+#
+# Region unit_codes in cgjr_ctf equal wbcountries$region_code verbatim
+# (e.g. "AFE"); income-group unit_codes are a slug ("high_income") that only
+# matches wbcountries$income_group via the display label ("High income"), so
+# income groups are matched on unit_name, not unit_code.
+.expand_to_countries <- function(codes, ctf = cgjrdata::cgjr_ctf,
+                                 wb = cgjrdata::wbcountries) {
+  codes <- unique(codes)
+  if (length(codes) == 0L) return(character(0))
+
+  u <- dplyr::distinct(ctf, .data$unit_level, .data$unit_code, .data$unit_name)
+  u <- u[u$unit_code %in% codes, ]
+
+  # AFE/AFW leak into cgjr_ctf as BOTH a region row and a country row (the
+  # same "WB aggregates leak in as countries" issue .unit_choices() already
+  # drops from its Countries list) - always resolve them as regions here.
+  country_codes <- u$unit_code[u$unit_level == "country" & !u$unit_code %in% c("AFE", "AFW")]
+  region_codes  <- u$unit_code[u$unit_level == "region"]
+  income_labels <- u$unit_name[u$unit_level == "income_group"]
+
+  unique(c(
+    country_codes,
+    wb$country_code[!is.na(wb$region_code) & wb$region_code %in% region_codes],
+    wb$country_code[!is.na(wb$income_group) & wb$income_group %in% income_labels]
+  ))
+}
+
 .SELECTION_FIELDS <- c("base", "comparators", "threshold", "year_range")
 .YEAR_MIN <- 2013L
 .YEAR_MAX <- 2024L
@@ -63,9 +108,9 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
     bslib::layout_columns(
       col_widths = c(8, 4),
       shiny::selectizeInput(
-        ns("base"), "Base unit",
-        choices = choices, selected = default_base,
-        options = list(placeholder = "A country, region or income group")
+        ns("base"), "Base unit(s)",
+        choices = choices$Countries, selected = default_base, multiple = TRUE,
+        options = list(placeholder = "One or more countries")
       ),
       shiny::tags$div(
         class = "d-flex align-items-end h-100 gap-2 pb-3",
@@ -86,6 +131,11 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
         choices = choices, selected = .default_comparators(default_base),
         multiple = TRUE, width = "100%",
         options = list(placeholder = "Countries, regions, income groups")
+      ),
+      shiny::helpText(
+        "Picking a region or income group adds its member countries as ",
+        "individual comparators - the group itself is never used as a ",
+        "single comparator unit."
       ),
       shiny::helpText(shiny::textOutput(ns("comp_count"), inline = TRUE))
     ),
@@ -117,20 +167,40 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
 #' @param default_base Character `unit_code` - must match the UI's
 #'   `default_base`; seeds the pre-Apply state so the dashboard renders
 #'   immediately.
-#' @return A named list of reactives: `base_unit` (scalar `unit_code`),
-#'   `comparison_units` (character vector, base removed), `threshold`,
-#'   `year_range`, and `applied` (the Apply click count). `base_unit` ...
-#'   `year_range` hold the default selection until "Apply" is clicked, then
-#'   update only on each subsequent click.
+#' @return A named list of reactives: `base_unit` (character vector of
+#'   country `unit_code`s - one or more, never a region/income-group
+#'   aggregate), `comparison_units` (character vector of country
+#'   `unit_code`s, base removed, any region/income group already expanded to
+#'   its members), `threshold`, `year_range`, and `applied` (the Apply click
+#'   count). `base_unit` ... `year_range` hold the default selection until
+#'   "Apply" is clicked, then update only on each subsequent click.
 #' @export
 mod_country_selection_server <- function(id, default_base = "GHA") {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # Regions / income groups picked as comparators are shortcuts, never
+    # comparator units themselves - .expand_to_countries() swaps them for
+    # their member countries wherever the comparator set is actually
+    # consumed (comps_live() below), so correctness never depends on the
+    # widget round-trip. The observer just keeps the widget's own display in
+    # sync for the user (cliarappak's `groups` -> `countries` sync); it's a
+    # UX nicety only - shiny::testServer()'s MockShinySession has no
+    # sendInputMessage(), so update*Input() calls are inert there, which is
+    # exactly why the real expansion can't live behind this observer alone.
+    shiny::observeEvent(input$comparators, {
+      sel      <- input$comparators %||% character(0)
+      expanded <- setdiff(.expand_to_countries(sel), input$base %||% character(0))
+      if (!setequal(expanded, sel)) {
+        shiny::updateSelectizeInput(session, "comparators", selected = expanded)
+      }
+    }, ignoreInit = TRUE, ignoreNULL = FALSE)
+
     comps_live <- shiny::reactive(
-      setdiff(input$comparators %||% character(0), input$base %||% character(0))
+      setdiff(.expand_to_countries(input$comparators %||% character(0)),
+              input$base %||% character(0))
     )
-    base_ok <- shiny::reactive(!is.null(input$base) && nzchar(input$base))
+    base_ok <- shiny::reactive(length(input$base) >= 1L && all(nzchar(input$base)))
     ready   <- shiny::reactive(base_ok() && length(comps_live()) >= 2L)
 
     output$comp_count <- shiny::renderText({

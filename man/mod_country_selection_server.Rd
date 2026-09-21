@@ -14,11 +14,13 @@ mod_country_selection_server(id, default_base = "GHA")
 immediately.}
 }
 \value{
-A named list of reactives: \code{base_unit} (scalar \code{unit_code}),
-\code{comparison_units} (character vector, base removed), \code{threshold},
-\code{year_range}, and \code{applied} (the Apply click count). \code{base_unit} ...
-\code{year_range} hold the default selection until "Apply" is clicked, then
-update only on each subsequent click.
+A named list of reactives: \code{base_unit} (character vector of
+country \code{unit_code}s - one or more, never a region/income-group
+aggregate), \code{comparison_units} (character vector of country
+\code{unit_code}s, base removed, any region/income group already expanded to
+its members), \code{threshold}, \code{year_range}, and \code{applied} (the Apply click
+count). \code{base_unit} ... \code{year_range} hold the default selection until
+"Apply" is clicked, then update only on each subsequent click.
 }
 \description{
 Country / comparator selection module server

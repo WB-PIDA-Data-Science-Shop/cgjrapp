@@ -16,7 +16,10 @@ static_plot(
 \arguments{
 \item{dq}{Output of \code{\link[=def_quantiles]{def_quantiles()}}.}
 
-\item{base_unit}{Character scalar. The focal \code{unit_code}.}
+\item{base_unit}{Character vector. The focal \code{unit_code}(s) - when more
+than one, each is drawn with its own point shape (cliarappak parity:
+\code{fill} stays reserved for Weak/Emerging/Strong \code{status}, \code{shape} carries
+the base unit identity), matching a single legend for each aesthetic.}
 
 \item{tab_name}{Optional plot title (the leaf's display name).}
 

@@ -61,7 +61,9 @@ mod_report_ui <- function(id) {
 #'
 #' @param id Module id.
 #' @param base_unit,comparison_units,threshold,year_range Reactives from
-#'   [mod_country_selection_server()].
+#'   [mod_country_selection_server()]. `base_unit()` may be a multi-unit
+#'   selection elsewhere in the app, but report generation requires exactly
+#'   one (a narrative chapter needs a single focal unit) and errors otherwise.
 #' @return Invisibly `NULL`.
 #' @export
 mod_report_server <- function(id, base_unit, comparison_units, threshold,
@@ -116,6 +118,11 @@ mod_report_server <- function(id, base_unit, comparison_units, threshold,
 
       base <- base_unit()
       comps <- comparison_units()
+
+      if (length(base) != 1L) {
+        r_error("Select exactly one base unit for the AI Report (a narrative needs a single focal unit).")
+        r_gen(FALSE); return()
+      }
       base_nm <- unit_name(base)
 
       if (length(comps) < 2L) {
@@ -164,12 +171,16 @@ mod_report_server <- function(id, base_unit, comparison_units, threshold,
 
     output$download_docx <- shiny::downloadHandler(
       filename = function() {
-        paste0("CGJR_report_", base_unit(), "_",
+        # base_unit() may have moved to a multi-unit selection since the
+        # report was generated for a single one - the report text itself
+        # (r_text()) always reflects the unit it was generated for, so fall
+        # back to just the first code rather than a multi-country filename.
+        paste0("CGJR_report_", base_unit()[[1]], "_",
                format(Sys.Date(), "%Y%m%d"), ".docx")
       },
       content = function(file) {
         shiny::req(nchar(r_text()) > 0L)
-        doc <- format_report_docx(r_text(), unit_name(base_unit()))
+        doc <- format_report_docx(r_text(), unit_name(base_unit()[[1]]))
         print(doc, target = file)
       }
     )

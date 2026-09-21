@@ -44,7 +44,10 @@
 #' own percentiles, and a dashed line at the frontier (`x = 1`).
 #'
 #' @param dq Output of [def_quantiles()].
-#' @param base_unit Character scalar. The focal `unit_code`.
+#' @param base_unit Character vector. The focal `unit_code`(s) - when more
+#'   than one, each is drawn with its own point shape (cliarappak parity:
+#'   `fill` stays reserved for Weak/Emerging/Strong `status`, `shape` carries
+#'   the base unit identity), matching a single legend for each aesthetic.
 #' @param tab_name Optional plot title (the leaf's display name).
 #' @param threshold `"Default"` or `"Terciles"` - must match the value passed
 #'   to [def_quantiles()].
@@ -64,10 +67,13 @@ static_plot <- function(dq, base_unit, tab_name = NULL,
   base_df <- dplyr::filter(dq, .data$unit_code %in% base_unit)
   if (nrow(base_df) == 0L) return(.empty_plot())
 
+  # Ordered by mean dtf across all selected base units - reduces to the
+  # original single-unit ordering when only one is selected.
   order_lvls <- base_df |>
-    dplyr::arrange(.data$dtf) |>
-    dplyr::pull(.data$indicator) |>
-    unique()
+    dplyr::group_by(.data$indicator) |>
+    dplyr::summarise(.dtf_mean = mean(.data$dtf, na.rm = TRUE), .groups = "drop") |>
+    dplyr::arrange(.data$.dtf_mean) |>
+    dplyr::pull(.data$indicator)
   dq <- dplyr::mutate(
     dq,
     indicator = factor(.data$indicator, levels = order_lvls),
@@ -119,13 +125,28 @@ static_plot <- function(dq, base_unit, tab_name = NULL,
     }
   }
 
+  n_base <- dplyr::n_distinct(base_df$unit_code)
+  if (n_base > 1L) {
+    p <- p +
+      suppressWarnings(ggplot2::geom_point(
+        data = base_df,
+        ggplot2::aes(y = .data$indicator, x = .data$dtf, shape = .data$unit_name,
+                     fill = .data$status, text = .data$text),
+        size = 3, colour = "gray0"
+      )) +
+      ggplot2::scale_shape_manual(values = 21:25, name = NULL) +
+      ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(shape = 21)))
+  } else {
+    p <- p +
+      suppressWarnings(ggplot2::geom_point(
+        data = base_df,
+        ggplot2::aes(y = .data$indicator, x = .data$dtf,
+                     fill = .data$status, text = .data$text),
+        shape = 21, size = 3, colour = "gray0"
+      ))
+  }
+
   p +
-    suppressWarnings(ggplot2::geom_point(
-      data = base_df,
-      ggplot2::aes(y = .data$indicator, x = .data$dtf,
-                   fill = .data$status, text = .data$text),
-      shape = 21, size = 3, colour = "gray0"
-    )) +
     ggplot2::scale_fill_manual(values = pal, drop = FALSE, name = NULL) +
     ggplot2::scale_y_discrete(labels = function(x) .wrap_label(x, 40)) +
     ggplot2::scale_x_continuous(limits = c(0, NA)) +

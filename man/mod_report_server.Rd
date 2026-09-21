@@ -10,7 +10,9 @@ mod_report_server(id, base_unit, comparison_units, threshold, year_range)
 \item{id}{Module id.}
 
 \item{base_unit, comparison_units, threshold, year_range}{Reactives from
-\code{\link[=mod_country_selection_server]{mod_country_selection_server()}}.}
+\code{\link[=mod_country_selection_server]{mod_country_selection_server()}}. \code{base_unit()} may be a multi-unit
+selection elsewhere in the app, but report generation requires exactly
+one (a narrative chapter needs a single focal unit) and errors otherwise.}
 }
 \value{
 Invisibly \code{NULL}.
