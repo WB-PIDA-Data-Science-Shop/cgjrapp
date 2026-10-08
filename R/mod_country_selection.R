@@ -3,11 +3,10 @@
 #
 # Port of cliarappak::mod_benchmark.R's selection UI/logic (not its plots) -
 # a base unit, a comparator set, threshold and year-range controls, an
-# "Apply selection" gate, and save/load of the selection - as its own nav
-# page (between Home and Benchmarking), card-laid-out like the first half of
-# cliarappak's benchmarking page (base unit + save/load up top, a "Comparator
-# countries" card, a "Benchmarking options" card), rather than cliarappak's
-# always-visible sidebar. Left out deliberately: cliarappak's per-family
+# "Apply selection" gate, and save/load of the selection - as its own sidebar
+# page (between Home and Benchmarking), laid out like the first half of
+# cliarappak's benchmarking page (base country + save/load up top, a
+# "Comparator countries" bs4Card, a "Benchmarking options" bs4Card). Left out deliberately: cliarappak's per-family
 # picker (cgjrapp's Benchmarking tab already shows the whole taxonomy at
 # once, so there's nothing to pick between), custom comparison groups, the
 # separate "groups" shortcut + toggle-revealed country checklist widgets,
@@ -31,20 +30,53 @@
 # mod_benchmark_dashboard_server() consumes.
 # ---
 
+# ISO codes of real countries. cgjr_ctf tags 17 World Bank aggregates (AFE,
+# AFW, EAS, HIC, NAC, ...) as unit_level == "country"; cliaretl::wb_country_list
+# lists each aggregate under `group_code`, so its distinct `country_code`s are
+# actual countries only.
+.country_codes <- function(wb_list = cliaretl::wb_country_list) {
+  unique(wb_list$country_code)
+}
+
 # grouped picker choices: names = unit_name, values = unit_code
 .unit_choices <- function(ctf = cgjrdata::cgjr_ctf) {
   u <- dplyr::distinct(ctf, .data$unit_level, .data$unit_code, .data$unit_name)
-  mk <- function(lvl, drop = character(0)) {
-    x <- u[u$unit_level == lvl & !u$unit_code %in% drop, ]
+  real <- .country_codes()
+  mk <- function(lvl) {
+    x <- u[u$unit_level == lvl & (lvl != "country" | u$unit_code %in% real), ]
     x <- x[order(x$unit_name), ]
     stats::setNames(x$unit_code, x$unit_name)
   }
   list(
-    Countries       = mk("country", drop = c("AFE", "AFW")),  # WB aggregates leak in as "countries"
+    Countries       = mk("country"),
     Regions         = mk("region"),
     `Income groups` = mk("income_group")
   )
 }
+
+# Picker labels with a flag in front of each country (cliarappak parity: its
+# `flags_with_countries`, flagcdn.com images keyed on the ISO2 code). Built
+# from our ISO3 `unit_code`s rather than by matching names. Codes with no
+# ISO2 flag (e.g. CHI, Channel Islands) and non-country units (regions,
+# income groups) get the plain name. Returns HTML strings for
+# shinyWidgets::pickerInput()'s `choicesOpt$content`, in `choices` order.
+.flag_content <- function(choices) {
+  codes <- unname(choices)
+  labels <- htmltools::htmlEscape(names(choices))
+  iso2 <- countrycode::countrycode(
+    codes, "iso3c", "iso2c", warn = FALSE,
+    custom_match = c(XKX = "XK", CHI = NA_character_)
+  )
+  ifelse(
+    is.na(iso2),
+    labels,
+    sprintf('<img src="https://flagcdn.com/w20/%s.png" alt="%s"> %s',
+            tolower(iso2), iso2, labels)
+  )
+}
+
+# shinyWidgets::pickerInput() options shared by both pickers (cliarappak's)
+.PICKER_OPTIONS <- list(`actions-box` = TRUE, `live-search` = TRUE)
 
 # a sensible default comparator set: the base country's WB region-mates
 .default_comparators <- function(base_iso, wb = cgjrdata::wbcountries) {
@@ -72,10 +104,10 @@
   u <- dplyr::distinct(ctf, .data$unit_level, .data$unit_code, .data$unit_name)
   u <- u[u$unit_code %in% codes, ]
 
-  # AFE/AFW leak into cgjr_ctf as BOTH a region row and a country row (the
-  # same "WB aggregates leak in as countries" issue .unit_choices() already
-  # drops from its Countries list) - always resolve them as regions here.
-  country_codes <- u$unit_code[u$unit_level == "country" & !u$unit_code %in% c("AFE", "AFW")]
+  # WB aggregates (AFE, NAC, HIC, ...) leak into cgjr_ctf as "country" rows;
+  # only codes in .country_codes() are real countries. AFE/AFW/NAC also have a
+  # genuine region row, which is resolved below.
+  country_codes <- u$unit_code[u$unit_level == "country" & u$unit_code %in% .country_codes()]
   region_codes  <- u$unit_code[u$unit_level == "region"]
   income_labels <- u$unit_name[u$unit_level == "income_group"]
 
@@ -95,42 +127,61 @@
 #' @param id Module id.
 #' @param default_base Character `unit_code` to pre-select as the base unit.
 #' @param ctf Long CTF tibble the picker choices are built from.
-#' @return A [bslib::nav_panel()].
+#' @return A `shiny::tagList` - the content of the `"selection"`
+#'   [bs4Dash::tabItem()].
 #' @export
 mod_country_selection_ui <- function(id, default_base = "GHA",
                                      ctf = cgjrdata::cgjr_ctf) {
   ns <- shiny::NS(id)
   choices <- .unit_choices(ctf)
 
-  bslib::nav_panel(
-    title = "Country Selection", icon = shiny::icon("flag"), value = "selection",
-
-    bslib::layout_columns(
-      col_widths = c(8, 4),
-      shiny::selectizeInput(
-        ns("base"), "Base unit(s)",
-        choices = choices$Countries, selected = default_base, multiple = TRUE,
-        options = list(placeholder = "One or more countries")
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(
+        width = 8,
+        style = "padding-left: 24px",
+        shinyWidgets::pickerInput(
+          ns("base"),
+          shiny::tags$span("Base country:", style = "font-size: 28px; color: #051f3f;"),
+          choices = choices$Countries,
+          choicesOpt = list(content = .flag_content(choices$Countries)),
+          selected = default_base, multiple = TRUE, width = "100%",
+          options = c(.PICKER_OPTIONS, list(title = "One or more countries"))
+        )
       ),
-      shiny::tags$div(
-        class = "d-flex align-items-end h-100 gap-2 pb-3",
-        shiny::downloadButton(ns("save_sel"), "Save",
-                              class = "btn-sm btn-outline-secondary"),
+      shiny::column(
+        width = 4,
+        shiny::tags$span("Selection of Countries",
+                         style = "font-size: 1rem; color: #051f3f; font-weight:bold"),
         shiny::tags$div(
-          class = "flex-grow-1",
+          class = "d-flex align-items-start",
+          shiny::downloadButton(ns("save_sel"), "Save",
+                                class = "save_inputs_btn mr-2"),
           shiny::fileInput(ns("load_sel"), NULL, accept = ".rds",
                            buttonLabel = "Load...", placeholder = "")
         )
       )
     ),
 
-    bslib::card(
-      bslib::card_header("Comparator countries"),
-      shiny::selectizeInput(
+    shiny::fluidRow(style = "height: 5px;"),
+
+    bs4Dash::bs4Card(
+      title = "Comparator countries",
+      status = "success",
+      solidHeader = TRUE,
+      width = 12,
+      collapsible = TRUE,
+      shinyWidgets::pickerInput(
         ns("comparators"), "Comparators",
-        choices = choices, selected = .default_comparators(default_base),
+        choices = choices,
+        # content follows the flattened choices: countries, regions, income groups
+        choicesOpt = list(content = .flag_content(unlist(unname(choices)))),
+        selected = .default_comparators(default_base),
         multiple = TRUE, width = "100%",
-        options = list(placeholder = "Countries, regions, income groups")
+        options = c(.PICKER_OPTIONS, list(
+          title = "Countries, regions, income groups",
+          `selected-text-format` = "count > 6"
+        ))
       ),
       shiny::helpText(
         "Picking a region or income group adds its member countries as ",
@@ -140,19 +191,28 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
       shiny::helpText(shiny::textOutput(ns("comp_count"), inline = TRUE))
     ),
 
-    bslib::card(
-      bslib::card_header("Benchmarking options"),
-      bslib::layout_columns(
-        col_widths = c(6, 6),
-        shiny::selectInput(
-          ns("threshold"), "Benchmarking thresholds",
-          choices = c("Default (25th / 50th pctile)" = "Default",
-                      "Terciles (33rd / 66th)"       = "Terciles")
+    bs4Dash::bs4Card(
+      title = "Benchmarking options",
+      status = "success",
+      solidHeader = TRUE,
+      width = 12,
+      collapsible = TRUE,
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shiny::selectInput(
+            ns("threshold"), "Benchmarking thresholds",
+            choices = c("Default (25th / 50th pctile)" = "Default",
+                        "Terciles (33rd / 66th)"       = "Terciles")
+          )
         ),
-        shiny::sliderInput(
-          ns("year_range"), "Year range (dynamic view, even years only)",
-          min = .YEAR_MIN, max = .YEAR_MAX, value = c(.YEAR_MIN, .YEAR_MAX),
-          step = 1L, sep = ""
+        shiny::column(
+          width = 6,
+          shiny::sliderInput(
+            ns("year_range"), "Year range (dynamic view, even years only)",
+            min = .YEAR_MIN, max = .YEAR_MAX, value = c(.YEAR_MIN, .YEAR_MAX),
+            step = 1L, sep = ""
+          )
         )
       )
     ),
@@ -192,7 +252,7 @@ mod_country_selection_server <- function(id, default_base = "GHA") {
       sel      <- input$comparators %||% character(0)
       expanded <- setdiff(.expand_to_countries(sel), input$base %||% character(0))
       if (!setequal(expanded, sel)) {
-        shiny::updateSelectizeInput(session, "comparators", selected = expanded)
+        shinyWidgets::updatePickerInput(session, "comparators", selected = expanded)
       }
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
@@ -213,12 +273,15 @@ mod_country_selection_server <- function(id, default_base = "GHA") {
 
     output$apply_ui <- shiny::renderUI({
       if (ready()) {
-        shiny::actionButton(ns("apply"), "Apply selection",
-                            class = "btn-primary btn-lg", icon = shiny::icon("check"))
+        # bs4Dash's actionButton(), not shiny's: shiny's always adds
+        # btn-default, which overrides btn-primary under AdminLTE
+        bs4Dash::actionButton(ns("apply"), "Apply selection",
+                              status = "primary", size = "lg",
+                              icon = shiny::icon("check"))
       } else {
-        shiny::actionButton(ns("apply"),
-                            "Pick a base unit and 2+ comparators",
-                            class = "btn-secondary btn-lg", disabled = TRUE)
+        bs4Dash::actionButton(ns("apply"),
+                              "Pick a base unit and 2+ comparators",
+                              status = "secondary", size = "lg", disabled = TRUE)
       }
     })
 
@@ -257,8 +320,8 @@ mod_country_selection_server <- function(id, default_base = "GHA") {
         shiny::showNotification("Not a valid CGJR selection file.", type = "error")
         return()
       }
-      shiny::updateSelectizeInput(session, "base", selected = s$base)
-      shiny::updateSelectizeInput(session, "comparators", selected = s$comparators)
+      shinyWidgets::updatePickerInput(session, "base", selected = s$base)
+      shinyWidgets::updatePickerInput(session, "comparators", selected = s$comparators)
       shiny::updateSelectInput(session, "threshold", selected = s$threshold)
       shiny::updateSliderInput(session, "year_range", value = s$year_range)
     })

@@ -48,6 +48,9 @@ test_that("export_live_scores has one row per taxonomy leaf, empty leaves scaffo
 test_that("export_indicator_catalogue is the full crosswalk, display-tidied", {
   d <- export_indicator_catalogue()
   expect_equal(nrow(d), nrow(cgjrdata::cgjr_crosswalk))
-  expect_true(all(c("Cluster", "Indicator", "Source", "Variable",
-                    "Dynamic-eligible", "Static-eligible", "Status") %in% names(d)))
+  expect_named(d, c("Cluster", "Subcluster", "Sub-subcluster", "Indicator",
+                    "Source", "Variable", "Description"))
+  cw <- cgjrdata::cgjr_crosswalk
+  expect_identical(d$Description[!is.na(d$Description)][1],
+                   cw$description_short[!is.na(cw$description_short)][1])
 })

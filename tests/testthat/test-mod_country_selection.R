@@ -7,8 +7,17 @@ test_that(".unit_choices groups every cgjr_ctf unit by level", {
   expect_setequal(unname(ch$Regions),
                   c("AFE", "AFW", "EAP", "ECA", "LAC", "MENAAP", "NAC", "SAR"))
   expect_length(ch[["Income groups"]], 4L)
-  # the AFE/AFW WB-aggregate "country" rows are dropped from Countries
-  expect_false(any(c("AFE", "AFW") %in% unname(ch$Countries)))
+  # every WB-aggregate "country" row (AFE, NAC, EAS, HIC, OED, ...) is dropped
+  # from Countries - only real countries remain
+  aggs <- unique(cliaretl::wb_country_list$group_code)
+  expect_false(any(aggs %in% unname(ch$Countries)))
+  expect_true(all(unname(ch$Countries) %in% cliaretl::wb_country_list$country_code))
+  expect_length(ch$Countries, 216L)
+})
+
+test_that(".expand_to_countries drops leaked aggregate 'country' rows", {
+  got <- cgjrapp:::.expand_to_countries(c("HIC", "EAS", "OED"))
+  expect_length(got, 0L)
 })
 
 test_that(".default_comparators returns the base country's region-mates", {
@@ -86,12 +95,11 @@ test_that("UI renders the pickers, gate and save/load", {
   }
 })
 
-test_that("UI is its own nav page, card-laid-out like cliarappak's selection UI", {
-  ui <- mod_country_selection_ui("selection")
-  expect_s3_class(ui, "shiny.tag")
-  expect_identical(ui$attribs$`data-value`, "selection")
-  html <- as.character(ui)
-  expect_match(html, "Country Selection", fixed = TRUE)
+test_that("UI is card-laid-out like cliarappak's selection UI", {
+  html <- as.character(mod_country_selection_ui("selection"))
+  expect_match(html, "Base country:", fixed = TRUE)
+  expect_match(html, "Selection of Countries", fixed = TRUE)
+  expect_match(html, "card-success", fixed = TRUE)
   expect_match(html, "Comparator countries", fixed = TRUE)
   expect_match(html, "Benchmarking options", fixed = TRUE)
 })
@@ -160,4 +168,24 @@ test_that("a valid load file is accepted without error", {
     session$setInputs(load_sel = list(datapath = tmp, name = "sel.rds"))
     expect_no_error(session$flushReact())
   })
+})
+
+test_that(".flag_content prefixes each country with its flagcdn flag", {
+  out <- cgjrapp:::.flag_content(c(Ghana = "GHA", Kosovo = "XKX",
+                                   `Channel Islands` = "CHI",
+                                   `High income` = "high_income"))
+  expect_identical(out[[1]], '<img src="https://flagcdn.com/w20/gh.png" alt="GH"> Ghana')
+  expect_match(out[[2]], "flagcdn.com/w20/xk.png", fixed = TRUE)
+  expect_identical(out[[3]], "Channel Islands")   # no ISO2 flag
+  expect_identical(out[[4]], "High income")       # groups: plain name
+  # names are HTML-escaped
+  expect_match(cgjrapp:::.flag_content(c(`A & B` = "GHA")), "A &amp; B", fixed = TRUE)
+})
+
+test_that("pickers are cliarappak's pickerInput with flags, search and select-all", {
+  html <- as.character(mod_country_selection_ui("selection"))
+  expect_match(html, "selectpicker", fixed = TRUE)
+  expect_match(html, "flagcdn.com/w20/gh.png", fixed = TRUE)
+  expect_match(html, 'data-live-search="true"', fixed = TRUE)
+  expect_match(html, 'data-actions-box="true"', fixed = TRUE)
 })

@@ -1,0 +1,9 @@
+/* cgjrapp additions on top of cliarappak's styles.css (kept verbatim). */
+
+/* Benchmarking leaf card: the plot output is a fixed-height window and the
+   plot inside it (sized by benchmark_plot_height()) scrolls when taller -
+   cliarappak's scrollable benchmarking plot area. */
+.cgjr-plot-window .plotly.html-widget {
+  overflow-y: auto;
+  overflow-x: hidden;
+}

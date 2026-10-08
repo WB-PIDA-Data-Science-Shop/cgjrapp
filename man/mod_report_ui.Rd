@@ -4,13 +4,16 @@
 \alias{mod_report_ui}
 \title{AI Report tab UI}
 \usage{
-mod_report_ui(id)
+mod_report_ui(id, taxonomy = cgjrdata::cgjr_taxonomy)
 }
 \arguments{
 \item{id}{Module id.}
+
+\item{taxonomy}{\code{cgjrdata::cgjr_taxonomy} - supplies the cluster picker.}
 }
 \value{
-A \code{\link[bslib:nav_panel]{bslib::nav_panel()}}.
+A \code{shiny::tagList} - the content of the \code{"report"}
+\code{\link[bs4Dash:tabItem]{bs4Dash::tabItem()}}.
 }
 \description{
 AI Report tab UI

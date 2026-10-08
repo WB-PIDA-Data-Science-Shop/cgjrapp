@@ -28,14 +28,21 @@ test_that("%||% works with a length-10 vector without error", {
 
 # -- UI structure tests ---
 
-test_that("mod_welcome_ui returns a shiny.tag object", {
-  ui <- mod_welcome_ui("test")
-  expect_s3_class(ui, "shiny.tag")
+test_that("mod_welcome_ui is cliarappak's home card: navy, logo banner, GOVCGJR text", {
+  html <- as.character(mod_welcome_ui("test"))
+  expect_match(html, "card-navy", fixed = TRUE)
+  expect_match(html, "assets/cgjr_logo.jpg", fixed = TRUE)
+  expect_match(html, "Welcome to the GOVCGJR Benchmarking Dashboard!", fixed = TRUE)
+  expect_match(html, "<h3>How to use this dashboard</h3>", fixed = TRUE)
+  for (tab in c("Country Selection", "Benchmarking", "Data", "AI Report")) {
+    expect_match(html, paste0("<strong>", tab, "</strong>"), fixed = TRUE)
+  }
 })
 
-test_that("mod_welcome_ui contains a nav_panel with value 'home'", {
-  ui <- mod_welcome_ui("test")
-  expect_equal(ui$attribs$`data-value`, "home")
+test_that("mod_placeholder_ui is a titled navy card", {
+  html <- as.character(mod_placeholder_ui("faq", "FAQ"))
+  expect_match(html, "card-navy", fixed = TRUE)
+  expect_match(html, "FAQ", fixed = TRUE)
 })
 
 # -- Server tests ---

@@ -14,7 +14,8 @@ mod_country_selection_ui(id, default_base = "GHA", ctf = cgjrdata::cgjr_ctf)
 \item{ctf}{Long CTF tibble the picker choices are built from.}
 }
 \value{
-A \code{\link[bslib:nav_panel]{bslib::nav_panel()}}.
+A \code{shiny::tagList} - the content of the \code{"selection"}
+\code{\link[bs4Dash:tabItem]{bs4Dash::tabItem()}}.
 }
 \description{
 Country / comparator selection page UI

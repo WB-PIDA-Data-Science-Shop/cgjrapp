@@ -10,7 +10,8 @@ mod_welcome_ui(id)
 \item{id}{Module namespace ID.}
 }
 \value{
-A \code{\link[bslib:nav_panel]{bslib::nav_panel()}} containing the landing page.
+A \code{shiny::tagList} holding the landing-page card - the content of
+the \code{"home"} \code{\link[bs4Dash:tabItem]{bs4Dash::tabItem()}}.
 }
 \description{
 Home tab UI

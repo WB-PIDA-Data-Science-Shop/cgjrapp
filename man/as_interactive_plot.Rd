@@ -4,16 +4,22 @@
 \alias{as_interactive_plot}
 \title{Convert a benchmarking ggplot to an interactive plotly}
 \usage{
-as_interactive_plot(p, height = NULL)
+as_interactive_plot(p, height = NULL, filename = "cgjr_benchmark")
 }
 \arguments{
 \item{p}{A \code{ggplot} from \code{\link[=static_plot]{static_plot()}} / \code{\link[=static_plot_dyn]{static_plot_dyn()}}.}
 
 \item{height}{Pixel height, or \code{NULL} to let plotly decide.}
+
+\item{filename}{Base name (no extension) for the PNG download.}
 }
 \value{
 A \code{plotly} htmlwidget.
 }
 \description{
-Convert a benchmarking ggplot to an interactive plotly
+Lays the title and the Weak / Emerging / Strong legend out on separate rows
+in a fixed-height top margin (title on top, legend under it, left-aligned)
+so a long title can't run into the legend, and keeps cliarappak's modebar:
+Download-as-PNG (at the plot's full height, so a tall scrolling plot exports
+whole), zoom and reset.
 }

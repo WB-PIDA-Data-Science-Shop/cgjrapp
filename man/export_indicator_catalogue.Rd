@@ -14,6 +14,6 @@ A tibble, one row per indicator x leaf.
 }
 \description{
 Every crosswalk row - taxonomy placement, provider, \code{cliaretl} variable
-code, and the eligibility flags - for the Data Download tab and as
+code, and the variable's description - for the Data Download tab and as
 methodology reference.
 }

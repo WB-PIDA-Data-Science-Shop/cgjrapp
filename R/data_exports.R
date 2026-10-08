@@ -162,7 +162,7 @@ export_live_scores <- function(base_unit, comparison_units,
 #' The indicator catalogue (`cgjrdata::cgjr_crosswalk`, tidied for display)
 #'
 #' Every crosswalk row - taxonomy placement, provider, `cliaretl` variable
-#' code, and the eligibility flags - for the Data Download tab and as
+#' code, and the variable's description - for the Data Download tab and as
 #' methodology reference.
 #'
 #' @param crosswalk Data override for tests.
@@ -179,11 +179,6 @@ export_indicator_catalogue <- function(crosswalk = cgjrdata::cgjr_crosswalk) {
       Indicator        = .data$indicator,
       Source           = .data$source,
       Variable         = .data$variable,
-      `CLIAR family`   = .data$family_name,
-      `In cliaretl`    = .data$in_cliaretl,
-      `Dynamic-eligible` = .data$dynamic_eligible,
-      `Static-eligible`  = .data$static_eligible,
-      Status           = .data$cliaretl_status,
-      Note             = .data$note
+      Description      = .data$description_short
     )
 }

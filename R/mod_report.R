@@ -7,33 +7,45 @@
 #' AI Report tab UI
 #'
 #' @param id Module id.
-#' @return A [bslib::nav_panel()].
+#' @param taxonomy `cgjrdata::cgjr_taxonomy` - supplies the cluster picker.
+#' @return A `shiny::tagList` - the content of the `"report"`
+#'   [bs4Dash::tabItem()].
 #' @export
-mod_report_ui <- function(id) {
+mod_report_ui <- function(id, taxonomy = cgjrdata::cgjr_taxonomy) {
   ns <- shiny::NS(id)
+  tx <- as.data.frame(taxonomy)
+  tx <- tx[order(tx$cluster_num), ]
+  cluster_choices <- stats::setNames(unique(tx$cluster), unique(tx$cluster_name))
 
-  bslib::nav_panel(
-    title = "AI Report", icon = shiny::icon("robot"), value = "report",
-
-    bslib::card(
-      bslib::card_header(
-        shiny::tagList(
-          "AI-generated institutional chapter",
-          bslib::tooltip(
-            bsicons::bs_icon("info-circle"),
-            paste0("A draft governance chapter for the CGJR, written by a ",
-                   "large language model from the live CTF composite scores. ",
-                   "Review and edit before any official use.")
-          )
+  shiny::tagList(
+    bs4Dash::bs4Card(
+      title = shiny::tagList(
+        "AI-generated institutional chapter ",
+        shiny::tags$span(
+          shiny::icon("circle-info"),
+          title = paste0("A draft governance chapter for the CGJR, written by a ",
+                         "large language model from the live CTF composite scores. ",
+                         "Review and edit before any official use.")
         )
       ),
+      status = "success",
+      solidHeader = TRUE,
+      width = 12,
+      collapsible = FALSE,
+
+      shiny::checkboxGroupInput(
+        ns("clusters"), "Clusters to include",
+        choices = cluster_choices, selected = unname(cluster_choices)
+      ),
+      shiny::uiOutput(ns("data_report_ui")),
+      shiny::hr(),
 
       shiny::fluidRow(
         shiny::column(
           width = 9,
-          shiny::actionButton(ns("generate"), "Generate report",
-                              icon = shiny::icon("wand-magic-sparkles"),
-                              class = "btn-primary"),
+          bs4Dash::actionButton(ns("generate"), "Generate report",
+                                icon = shiny::icon("wand-magic-sparkles"),
+                                status = "primary"),
           shiny::downloadButton(ns("download_docx"), "Download Word",
                                 icon = shiny::icon("file-word"),
                                 style = "margin-left: 8px;")
@@ -43,13 +55,12 @@ mod_report_ui <- function(id) {
 
       shiny::hr(),
 
-      bslib::card(
-        class = "border-warning bg-warning-subtle mb-3",
-        bslib::card_body(shiny::tags$small(
-          shiny::tags$strong("Disclaimer: "),
+      bs4Dash::bs4Callout(
+        title = "Disclaimer", status = "warning", width = 12,
+        shiny::tags$small(
           "LLM-generated from CTF scores. A draft starting point only; verify ",
           "before use in any official document."
-        ))
+        )
       ),
 
       shiny::uiOutput(ns("report_output"))
@@ -69,6 +80,7 @@ mod_report_ui <- function(id) {
 mod_report_server <- function(id, base_unit, comparison_units, threshold,
                               year_range) {
   shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
     r_text  <- shiny::reactiveVal("")
     r_gen   <- shiny::reactiveVal(FALSE)
@@ -82,22 +94,22 @@ mod_report_server <- function(id, base_unit, comparison_units, threshold,
 
     output$status_badge <- shiny::renderUI({
       if (isTRUE(r_gen())) {
-        shiny::tags$span(class = "badge bg-secondary", "Generating...")
+        shiny::tags$span(class = "badge badge-secondary", "Generating...")
       } else if (!is.null(r_error())) {
-        shiny::tags$span(class = "badge bg-danger", "Error")
+        shiny::tags$span(class = "badge badge-danger", "Error")
       } else if (isTRUE(r_done()) && nchar(r_text()) > 0L) {
-        shiny::tags$span(class = "badge bg-success", "Ready")
+        shiny::tags$span(class = "badge badge-success", "Ready")
       } else {
-        shiny::tags$span(class = "badge bg-light text-dark", "Not generated")
+        shiny::tags$span(class = "badge badge-light", "Not generated")
       }
     })
 
     output$report_output <- shiny::renderUI({
       if (!is.null(r_error())) {
-        bslib::card(class = "border-danger", bslib::card_body(
-          shiny::tags$p(class = "text-danger",
-                        shiny::tags$strong("Error: "), r_error())
-        ))
+        bs4Dash::bs4Callout(
+          title = "Error", status = "danger", width = 12,
+          shiny::tags$p(class = "text-danger", r_error())
+        )
       } else if (nchar(r_text()) == 0L) {
         shiny::tags$p(class = "text-muted",
           "Click 'Generate report' for a draft chapter on the selected base unit.")
@@ -105,7 +117,7 @@ mod_report_server <- function(id, base_unit, comparison_units, threshold,
         shiny::tagList(
           shiny::HTML(commonmark::markdown_html(r_text())),
           if (isTRUE(r_gen())) {
-            shiny::tags$span(class = "spinner-grow spinner-grow-sm text-secondary ms-2",
+            shiny::tags$span(class = "spinner-grow spinner-grow-sm text-secondary ml-2",
                              role = "status")
           }
         )
@@ -168,6 +180,48 @@ mod_report_server <- function(id, base_unit, comparison_units, threshold,
         )
       )
     })
+
+    # --- data-only report (Phase 1: no LLM) ---
+    report_problem <- shiny::reactive({
+      if (length(base_unit()) != 1L) {
+        "Select exactly one base country (and Apply) for a report."
+      } else if (length(setdiff(comparison_units(), base_unit())) < 2L) {
+        "Select at least 2 comparators (and Apply) for a report."
+      } else if (length(input$clusters) == 0L) {
+        "Pick at least one cluster to include."
+      } else {
+        NULL
+      }
+    })
+
+    output$data_report_ui <- shiny::renderUI({
+      msg <- report_problem()
+      if (!is.null(msg)) return(shiny::helpText(msg))
+      shiny::tagList(
+        shiny::downloadButton(ns("download_data_report"), "Data report (Word)",
+                              icon = shiny::icon("file-word")),
+        shiny::helpText(
+          "Charts, tables and an evidence register computed by the dashboard ",
+          "for the applied selection - no AI-generated text."
+        )
+      )
+    })
+
+    output$download_data_report <- shiny::downloadHandler(
+      filename = function() {
+        paste0("CGJR_data_report_", base_unit()[[1]], "_",
+               format(Sys.Date(), "%Y%m%d"), ".docx")
+      },
+      content = function(file) {
+        shiny::req(is.null(report_problem()))
+        shiny::withProgress(message = "Building the data report...", value = 0.2, {
+          ev <- build_evidence(base_unit(), comparison_units(), threshold(),
+                               year_range(), clusters = input$clusters)
+          shiny::incProgress(0.4, detail = "Drawing charts")
+          print(evidence_report_docx(ev), target = file)
+        })
+      }
+    )
 
     output$download_docx <- shiny::downloadHandler(
       filename = function() {

@@ -1,6 +1,6 @@
 # mod_data.R -- Data Download tab.
 #
-# Three sub-tabs, all driven by the sidebar selection:
+# Three sub-tabs, all driven by the applied Country Selection:
 #   CTF         -- indicator-grain closeness-to-frontier for the selection.
 #   Raw values  -- native-scale provider values for the base country.
 #   Catalogue   -- the full indicator crosswalk / methodology reference.
@@ -37,37 +37,47 @@
 #' Data Download tab UI
 #'
 #' @param id Module id.
-#' @return A [bslib::nav_panel()].
+#' @return A `shiny::tagList` - the content of the `"data"`
+#'   [bs4Dash::tabItem()].
 #' @export
 mod_data_ui <- function(id) {
   ns <- shiny::NS(id)
 
-  bslib::nav_panel(
-    title = "Data", icon = shiny::icon("download"), value = "data",
+  shiny::tagList(
+    bs4Dash::bs4Card(
+      title = "Data download",
+      status = "success",
+      solidHeader = TRUE,
+      width = 12,
+      collapsible = FALSE,
 
-    shiny::tags$p(
-      class = "text-muted",
-      "Every table reflects the applied sidebar selection. Use the CSV / Excel",
-      " buttons on each table to download."
-    ),
+      shiny::tags$p(
+        class = "text-muted",
+        "Every table reflects the applied Country Selection. Use the CSV / Excel",
+        " buttons on each table to download."
+      ),
 
-    bslib::navset_card_pill(
-      bslib::nav_panel(
-        title = shiny::tagList(shiny::icon("sliders"), " CTF indicators"),
-        .ctf_type_picker(ns),
-        DT::DTOutput(ns("tbl_ctf"))
-      ),
-      bslib::nav_panel(
-        title = shiny::tagList(shiny::icon("database"), " Raw values"),
-        shiny::tags$p(class = "text-muted small",
-          "Native-scale provider values for the base country (1990+).",
-          " Raw data is country-grain only - regions / income groups are not",
-          " shown here."),
-        DT::DTOutput(ns("tbl_raw"))
-      ),
-      bslib::nav_panel(
-        title = shiny::tagList(shiny::icon("book"), " Indicator catalogue"),
-        DT::DTOutput(ns("tbl_catalogue"))
+      # bs4Dash's tabsetPanel(), not shiny's: without a bslib theme shiny's
+      # emits Bootstrap 3 nav markup, which Bootstrap 4 doesn't style
+      bs4Dash::tabsetPanel(
+        type = "pills",
+        shiny::tabPanel(
+          title = shiny::tagList(shiny::icon("sliders"), " CTF indicators"),
+          .ctf_type_picker(ns),
+          DT::DTOutput(ns("tbl_ctf"))
+        ),
+        shiny::tabPanel(
+          title = shiny::tagList(shiny::icon("database"), " Raw values"),
+          shiny::tags$p(class = "text-muted small",
+            "Native-scale provider values for the base country (1990+).",
+            " Raw data is country-grain only - regions / income groups are not",
+            " shown here."),
+          DT::DTOutput(ns("tbl_raw"))
+        ),
+        shiny::tabPanel(
+          title = shiny::tagList(shiny::icon("book"), " Indicator catalogue"),
+          DT::DTOutput(ns("tbl_catalogue"))
+        )
       )
     )
   )

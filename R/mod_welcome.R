@@ -1,33 +1,34 @@
-# mod_welcome.R -- Tab 1: Home / Landing page
-# Static landing page matching the cpiaapp pattern:
-# logo in card_header, welcome title + markdown in card_body.
-# No sidebar, no data.
+# mod_welcome.R -- Home / landing page.
+# Port of cliarappak::mod_home_ui(): one full-width navy bs4Card with the logo
+# banner as its title, then the welcome text. The text lives in
+# inst/markdown/cgjr_home.md so it can be edited without touching R.
+# No data.
 
 # -- UI ---
 
 #' Home tab UI
 #'
 #' @param id Module namespace ID.
-#' @return A [bslib::nav_panel()] containing the landing page.
+#' @return A `shiny::tagList` holding the landing-page card - the content of
+#'   the `"home"` [bs4Dash::tabItem()].
 #' @export
 mod_welcome_ui <- function(id) {
   ns <- shiny::NS(id)
 
-  bslib::nav_panel(
-    title = "Home",
-    icon  = shiny::icon("home"),
-    value = "home",
-
-    bslib::card(
-      bslib::card_header(
+  shiny::tagList(
+    bs4Dash::bs4Card(
+      width = 12,
+      status = "navy",
+      solidHeader = TRUE,
+      title = shiny::tags$span(
         shiny::tags$img(src = "assets/cgjr_logo.jpg", width = "80%")
       ),
-      bslib::card_body(
-        shiny::tags$br(),
-        shiny::markdown(
-          readLines(
-            system.file("markdown", "cgjr_home.md", package = "cgjrapp")
-          )
+
+      shiny::tags$br(),
+      shiny::markdown(
+        readLines(
+          system.file("markdown", "cgjr_home.md", package = "cgjrapp"),
+          encoding = "UTF-8"
         )
       )
     )

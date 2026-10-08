@@ -14,12 +14,16 @@ Starts the Country Jobs and Growth Report institutional benchmarking
 dashboard.
 }
 \details{
-Tabs: Home (Slice 6, carried over); Country Selection
-(\code{\link[=mod_country_selection_ui]{mod_country_selection_ui()}}, Slice 3) - base unit + comparator picker
-over every \code{cgjr_ctf} unit, Apply gate, save/load, laid out card-by-card
-like the first half of \code{cliarappak}'s benchmarking page rather than an
-always-visible sidebar; Benchmarking - the nested \code{cgjr_taxonomy}
-accordion of live leaf cards (\code{\link[=mod_benchmark_dashboard_ui]{mod_benchmark_dashboard_ui()}}, Slices 0-2);
-Data Download (\code{\link[=mod_data_ui]{mod_data_ui()}}, Slice 5); AI Report (\code{\link[=mod_report_ui]{mod_report_ui()}},
-Slice 5).
+The shell is a port of \code{cliarappak}'s \code{app_ui()}: a \code{\link[bs4Dash:dashboardPage]{bs4Dash::dashboardPage()}}
+with the same header, the same 350px light sidebar menu, and \code{cliarappak}'s
+\code{styles.css} (shipped verbatim as \code{inst/www/styles.css}; cgjrapp's own
+additions live in \code{inst/www/cgjr.css}), so fonts, sizes and colours match
+CLIAR's. Sidebar items, in \code{cliarappak}'s order: Home
+(\code{\link[=mod_welcome_ui]{mod_welcome_ui()}}); Country Selection (\code{\link[=mod_country_selection_ui]{mod_country_selection_ui()}}) - base
+unit + comparator picker, Apply gate, save/load; Benchmarking - the nested
+\code{cgjr_taxonomy} accordion of live leaf cards
+(\code{\link[=mod_benchmark_dashboard_ui]{mod_benchmark_dashboard_ui()}}); Data (\code{\link[=mod_data_ui]{mod_data_ui()}}); AI Report
+(\code{\link[=mod_report_ui]{mod_report_ui()}}); then the Methodology & User Guide, Terms of use and
+Disclaimers, FAQ and Contact Us placeholders (\code{\link[=mod_placeholder_ui]{mod_placeholder_ui()}}) and a
+Source code link.
 }

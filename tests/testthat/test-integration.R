@@ -5,21 +5,35 @@ test_that("run_cgjrapp() assembles a shiny app", {
   expect_s3_class(app, "shiny.appobj")
 })
 
-test_that("nav order is Home, Country Selection, Benchmarking, Data, AI Report - no sidebar", {
-  # page_navbar()'s ui is built inside run_cgjrapp() and only reachable via
-  # the assembled shiny.appobj's internal http handler, so check the source
-  # directly: no sidebar argument, and the nav modules appear in this order.
-  src <- paste(deparse(body(run_cgjrapp)), collapse = "\n")
-  expect_no_match(src, "sidebar", fixed = TRUE)
+test_that("sidebar menu mirrors cliarappak: same shell, GOVCGJR brand, tabs in order", {
+  # the bs4Dash ui is built inside run_cgjrapp() and only reachable via the
+  # assembled shiny.appobj's internal http handler, so check the source.
+  src <- paste(deparse(body(run_cgjrapp)), collapse = "
+")
+  expect_match(src, "bs4Dash::dashboardPage", fixed = TRUE)
+  expect_match(src, 'sidebar_width = "350px"', fixed = TRUE)
+  expect_match(src, '"GOVCGJR Benchmarking Dashboard"', fixed = TRUE)
+  expect_no_match(src, "page_navbar", fixed = TRUE)
 
-  pos <- vapply(
-    c('mod_welcome_ui("welcome")', 'mod_country_selection_ui("selection"',
-      'title = "Benchmarking"', 'mod_data_ui("data")', 'mod_report_ui("report")'),
-    function(needle) regexpr(needle, src, fixed = TRUE)[[1]],
-    numeric(1)
-  )
-  expect_true(all(pos > 0))
-  expect_true(all(diff(pos) > 0))   # strictly increasing == that exact order
+  in_order <- function(needles) {
+    pos <- vapply(needles, function(n) regexpr(n, src, fixed = TRUE)[[1]], numeric(1))
+    expect_true(all(pos > 0))
+    expect_true(all(diff(pos) > 0))   # strictly increasing == that exact order
+  }
+  # sidebar items
+  in_order(c('"Home"', '"Country Selection"', '"Benchmarking"', '"Data"',
+             '"AI Report"', '"Methodology & User Guide"',
+             '"Terms of use and Disclaimers"', '"FAQ"', '"Contact Us"',
+             '"Source code"'))
+  # tab bodies
+  in_order(c('mod_welcome_ui("welcome")', 'mod_country_selection_ui("selection"',
+             'mod_benchmark_dashboard_ui("bench"', 'mod_data_ui("data")',
+             'mod_report_ui("report")'))
+})
+
+test_that("the app ships cliarappak's styles.css", {
+  css <- readLines(system.file("www", "styles.css", package = "cgjrapp"))
+  expect_true(any(grepl("#051f3f", css, fixed = TRUE)))
 })
 
 test_that("default selection (GHA vs region-mates) renders a real leaf card", {

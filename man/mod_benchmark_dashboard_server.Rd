@@ -33,7 +33,10 @@ static view supports several, each drawn with its own point shape.}
 Invisibly \code{NULL}.
 }
 \description{
-Leaf-agnostic: it renders one card per finest-grain taxonomy node
+Renders one card per finest-grain taxonomy node
 (\code{coalesce(sub_subcluster, subcluster)}), regardless of how the UI nests
-them.
+them, plus one per Overall chart: cluster / subcluster / sub-subcluster
+averages (\code{\link[=family_scores]{family_scores()}}, a port of \code{cliarappak}'s Overview), each
+benchmarked by \code{\link[=def_quantiles]{def_quantiles()}} / \code{\link[=def_quantiles_dyn]{def_quantiles_dyn()}} like an indicator
+and drawn in fixed taxonomy order.
 }

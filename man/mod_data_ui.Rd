@@ -10,7 +10,8 @@ mod_data_ui(id)
 \item{id}{Module id.}
 }
 \value{
-A \code{\link[bslib:nav_panel]{bslib::nav_panel()}}.
+A \code{shiny::tagList} - the content of the \code{"data"}
+\code{\link[bs4Dash:tabItem]{bs4Dash::tabItem()}}.
 }
 \description{
 Data Download tab UI

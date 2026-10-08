@@ -15,7 +15,10 @@ columns). The accordion structure is generated entirely from its
 \verb{*_name} labels.}
 }
 \value{
-A nested \code{bslib::accordion}.
+A nested \code{\link[bs4Dash:accordion]{bs4Dash::accordion()}} - one item per cluster, then the
+Overall item (cluster / subcluster average charts, see
+\code{\link[=family_scores]{family_scores()}}) - the content of the \code{"benchmarking"}
+\code{\link[bs4Dash:tabItem]{bs4Dash::tabItem()}}.
 }
 \description{
 Benchmark dashboard module UI

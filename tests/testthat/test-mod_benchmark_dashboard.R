@@ -22,6 +22,10 @@ test_that("leaf card has a 'Show notes' switch, no composite-score value_box", {
   html <- as.character(mod_benchmark_dashboard_ui("bench", taxonomy = taxo_one))
   expect_match(html, 'id="bench-show_notes_justice_and_rule_of_law"', fixed = TRUE)
   expect_match(html, "Show notes", fixed = TRUE)
+  expect_match(html, "material-switch", fixed = TRUE)   # cliarappak's switch
+  # the plot sits in the fixed-height scroll window
+  expect_match(html, "cgjr-plot-window", fixed = TRUE)
+  expect_match(html, "height:600px", fixed = TRUE)
   expect_no_match(html, "bslib-value-box")
   expect_no_match(html, "Composite score")
 })
@@ -372,4 +376,59 @@ test_that("server handles the full taxonomy: populated leaves plot, empty ones s
       expect_error(output$`plot_domestic_revenue_mobilization`, "No data available")
     }
   )
+})
+
+# --- Overall: cluster / subcluster averages ------------------------------------
+
+test_that("UI: Overall item comes after the clusters, one card per Overall chart", {
+  tx <- cgjrdata::cgjr_taxonomy
+  html <- as.character(mod_benchmark_dashboard_ui("bench", taxonomy = tx))
+  expect_match(html, "bench-acc_overall", fixed = TRUE)
+  last_cluster <- tx$cluster_name[which.max(tx$cluster_num)]
+  expect_lt(max(gregexpr(last_cluster, html, fixed = TRUE)[[1]][1]),
+            regexpr(">Overall<", html, fixed = TRUE))
+  for (ch in cgjrapp:::.overall_charts(tx)) {
+    expect_match(html, paste0("bench-plot_", ch$key), fixed = TRUE)
+    expect_match(html, paste0("bench-ctf_type_", ch$key), fixed = TRUE)
+  }
+})
+
+test_that("server renders the Overall Clusters card from family_scores() + def_quantiles()", {
+  tx <- cgjrdata::cgjr_taxonomy
+  comps <- cgjrapp:::.default_comparators("GHA")
+  shiny::testServer(
+    mod_benchmark_dashboard_server,
+    args = list(
+      taxonomy         = tx,
+      base_unit        = shiny::reactive("GHA"),
+      comparison_units = shiny::reactive(comps),
+      threshold        = shiny::reactive("Default"),
+      year_range       = shiny::reactive(c(2013L, 2024L))
+    ),
+    {
+      session$setInputs(ctf_type_overall__clusters = "static",
+                        show_notes_overall__clusters = TRUE)
+      p <- output$plot_overall__clusters
+      expect_match(p, "plotly")
+      # every cluster is a row of the chart
+      for (nm in unique(tx$cluster_name)) expect_match(p, nm, fixed = TRUE)
+
+      note <- paste(as.character(output$note_overall__clusters), collapse = " ")
+      expect_match(note, "4 clusters \\(\\d+ indicators\\);")
+
+      notes_html <- paste(as.character(output$plot_notes_overall__clusters), collapse = " ")
+      expect_match(notes_html, "Ghana compared to", fixed = TRUE)
+    }
+  )
+})
+
+test_that("Overall plots keep taxonomy order, not value order", {
+  ch <- cgjrapp:::.overall_charts()[[1]]
+  comps <- cgjrapp:::.default_comparators("GHA")
+  slice <- filter_unit_data(cgjrapp:::.overall_leaves(ch), "static", c("GHA", comps))
+  dq <- def_quantiles(family_scores(slice, "GHA", comps, ch$row_col, ch$rows),
+                      "GHA", comps, "Default")
+  p <- static_plot(dq, "GHA", row_order = unname(ch$rows))
+  # ggplot draws the first level at the bottom: levels are the reversed order
+  expect_identical(levels(p$layers[[1]]$data$indicator), rev(unname(ch$rows)))
 })

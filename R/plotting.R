@@ -36,6 +36,95 @@
     ggplot2::theme_void()
 }
 
+# Indicators the dynamic plot can draw: those where the focal unit has data in
+# at least two years (a trend needs two points).
+.trend_indicators <- function(base_df) {
+  base_df |>
+    dplyr::group_by(.data$indicator) |>
+    dplyr::filter(dplyr::n_distinct(.data$year) > 1L) |>
+    dplyr::pull(.data$indicator) |>
+    unique()
+}
+
+# Dynamic facet titles - port of cliarappak::static_plot_dyn()'s `new_labels`:
+# the indicator name, then the focal unit's change in CTF and in rank between
+# its earliest and latest year. Unlike cliarappak, each "out of N" counts the
+# units ranked in the SAME year as the rank it qualifies (cliarappak takes N
+# from the indicator's earliest/latest year across all countries, which is a
+# different year whenever the focal unit's own series starts later).
+# .change_table() returns the numbers (one row per indicator: first/last year,
+# delta, ranks and N); .change_labels() formats them as a named character
+# vector, indicator -> label. The AI Report's evidence pack reuses
+# .change_table(), so the report and the charts can't disagree.
+.change_table <- function(dq, base_df) {
+  n_ranked <- dplyr::count(dq, .data$indicator, .data$year, name = "n")
+  base_df |>
+    dplyr::group_by(.data$indicator) |>
+    dplyr::filter(.data$year %in% range(.data$year)) |>
+    dplyr::arrange(.data$year, .by_group = TRUE) |>
+    dplyr::left_join(n_ranked, by = c("indicator", "year")) |>
+    dplyr::summarise(
+      year_first = dplyr::first(.data$year), year_last = dplyr::last(.data$year),
+      delta      = round(dplyr::last(.data$dtf) - dplyr::first(.data$dtf), 3),
+      rank_first = dplyr::first(.data$nrank), n_first = dplyr::first(.data$n),
+      rank_last  = dplyr::last(.data$nrank),  n_last  = dplyr::last(.data$n),
+      .groups = "drop"
+    )
+}
+
+.change_labels <- function(dq, base_df) {
+  ends <- .change_table(dq, base_df)
+  rank_line <- ifelse(
+    ends$rank_first != ends$rank_last,
+    sprintf("(Change in Percentile Rank: from %d out of %d to %d out of %d)",
+            ends$rank_first, ends$n_first, ends$rank_last, ends$n_last),
+    "(No significant change in Percentile Rank)"
+  )
+  stats::setNames(
+    paste0(.wrap_label(as.character(ends$indicator), 60),
+           "\n\n(Change in CTF: ", ends$delta, ")\n", rank_line),
+    ends$indicator
+  )
+}
+
+# Pixel height of a benchmarking plot, grown with its indicator count so every
+# indicator row (static) / facet row (dynamic) keeps the same size whatever the
+# leaf - the card shows it in a fixed scroll window (.PLOT_WINDOW_PX), the way
+# cliarappak's benchmarking page does. Never shorter than that window.
+.PLOT_WINDOW_PX <- 600L
+.plot_height <- function(n_indicators, ctf_type = c("static", "dynamic")) {
+  ctf_type <- match.arg(ctf_type)
+  h <- if (ctf_type == "static") {
+    160L + 45L * n_indicators
+  } else {
+    160L + 330L * ceiling(n_indicators / 2)   # two facet columns
+  }
+  as.integer(max(.PLOT_WINDOW_PX, h))
+}
+
+#' Pixel height for a leaf's benchmarking plot
+#'
+#' Counts the indicators the plot will actually draw - every indicator with
+#' focal-unit data (static), or those with at least two years of it
+#' (dynamic) - and sizes the plot so each keeps a fixed amount of room.
+#'
+#' @param dq Output of [def_quantiles()] / [def_quantiles_dyn()].
+#' @param base_unit Character vector of focal `unit_code`(s).
+#' @param ctf_type `"static"` or `"dynamic"`.
+#' @return Integer pixel height, at least 600.
+#' @export
+benchmark_plot_height <- function(dq, base_unit, ctf_type = c("static", "dynamic")) {
+  ctf_type <- match.arg(ctf_type)
+  if (is.null(dq) || nrow(dq) == 0L) return(.PLOT_WINDOW_PX)
+  base_df <- dplyr::filter(dq, .data$unit_code %in% base_unit)
+  n <- if (ctf_type == "static") {
+    dplyr::n_distinct(base_df$indicator)
+  } else {
+    length(.trend_indicators(base_df))
+  }
+  .plot_height(n, ctf_type)
+}
+
 #' Static benchmarking dot plot for one leaf
 #'
 #' Port of `cliarappak::static_plot()` for the closeness-to-frontier view: one
@@ -53,13 +142,17 @@
 #'   to [def_quantiles()].
 #' @param dots Logical. Overlay hollow comparison-unit points.
 #' @param note Optional caption string.
+#' @param row_order Optional character vector of `indicator` values in the
+#'   order to draw them, top to bottom (the Overall charts' fixed taxonomy
+#'   order, as cliarappak's Overview uses its family order). `NULL` orders by
+#'   the base unit's value.
 #'
 #' @return A `ggplot`. Wrap with [as_interactive_plot()] for Shiny.
 #' @seealso [static_plot_dyn()], [def_quantiles()]
 #' @export
 static_plot <- function(dq, base_unit, tab_name = NULL,
                         threshold = c("Default", "Terciles"),
-                        dots = FALSE, note = NULL) {
+                        dots = FALSE, note = NULL, row_order = NULL) {
   cutoff <- .family_cutoffs(threshold)
   if (is.null(dq) || nrow(dq) == 0L) return(.empty_plot())
 
@@ -74,6 +167,8 @@ static_plot <- function(dq, base_unit, tab_name = NULL,
     dplyr::summarise(.dtf_mean = mean(.data$dtf, na.rm = TRUE), .groups = "drop") |>
     dplyr::arrange(.data$.dtf_mean) |>
     dplyr::pull(.data$indicator)
+  # a fixed order instead; ggplot draws the first factor level at the bottom
+  if (!is.null(row_order)) order_lvls <- rev(intersect(row_order, order_lvls))
   dq <- dplyr::mutate(
     dq,
     indicator = factor(.data$indicator, levels = order_lvls),
@@ -175,9 +270,14 @@ static_plot <- function(dq, base_unit, tab_name = NULL,
 #' @export
 static_plot_dyn <- function(dq, base_unit, tab_name = NULL,
                             threshold = c("Default", "Terciles"),
-                            dots = FALSE, note = NULL) {
+                            dots = FALSE, note = NULL, row_order = NULL) {
   cutoff <- .family_cutoffs(threshold)
   if (is.null(dq) || nrow(dq) == 0L) return(.empty_plot())
+  # facets follow factor level order
+  if (!is.null(row_order)) {
+    dq$indicator <- factor(dq$indicator,
+                           levels = intersect(row_order, unique(dq$indicator)))
+  }
 
   pal <- .status_palette(cutoff)
   base_df <- dq |>
@@ -194,12 +294,7 @@ static_plot_dyn <- function(dq, base_unit, tab_name = NULL,
     )
   if (nrow(base_df) == 0L) return(.empty_plot())
 
-  # only indicators with >= 2 years of focal data (a trend needs two points)
-  keep_ind <- base_df |>
-    dplyr::group_by(.data$indicator) |>
-    dplyr::filter(dplyr::n_distinct(.data$year) > 1L) |>
-    dplyr::pull(.data$indicator) |>
-    unique()
+  keep_ind <- .trend_indicators(base_df)
   base_df <- dplyr::filter(base_df, .data$indicator %in% keep_ind)
   if (nrow(base_df) == 0L) return(.empty_plot("Not enough years of data to show a trend."))
 
@@ -255,8 +350,10 @@ static_plot_dyn <- function(dq, base_unit, tab_name = NULL,
                    fill = .data$status, text = .data$text),
       shape = 21, size = 2, colour = "gray0"
     )) +
-    ggplot2::facet_wrap(ggplot2::vars(.data$indicator), scales = "free_x",
-                        labeller = ggplot2::labeller(indicator = .wrap_label)) +
+    # cliarappak parity: two columns, free scales, change-in-CTF/rank titles
+    ggplot2::facet_wrap(ggplot2::vars(.data$indicator), ncol = 2, scales = "free",
+                        labeller = ggplot2::labeller(
+                          indicator = .change_labels(dq, base_df))) +
     ggplot2::scale_fill_manual(values = pal, drop = FALSE, name = NULL) +
     ggplot2::scale_y_continuous(limits = c(0, 1)) +
     ggplot2::labs(title = tab_name, x = NULL, y = "Closeness to frontier",
@@ -266,19 +363,85 @@ static_plot_dyn <- function(dq, base_unit, tab_name = NULL,
       legend.position = "top",
       panel.grid.minor = ggplot2::element_blank(),
       axis.ticks = ggplot2::element_blank(),
-      strip.text = ggplot2::element_text(face = "bold", size = 8)
+      strip.text = ggplot2::element_text(face = "bold", size = 8),
+      panel.spacing.x = ggplot2::unit(1, "lines"),
+      panel.spacing.y = ggplot2::unit(3, "lines")
     )
+}
+
+# cliarappak's plotly_remove_buttons: leaves Download-as-PNG, zoom and reset
+.PLOTLY_REMOVE_BUTTONS <- c(
+  "zoomIn2d", "zoomOut2d", "pan2d", "autoScale2d", "lasso2d", "select2d",
+  "toggleSpikelines", "hoverClosest3d", "hoverClosestCartesian",
+  "hoverCompareCartesian"
+)
+
+# The title row and, under it, the legend row are placed in pixels from the
+# top of the plot (title at the very top, legend LEGEND_TOP_PX down), inside a
+# fixed top margin - so neither can run into the other, nor into the dynamic
+# plot's facet titles, whatever the plot's height or title length. Dynamic
+# plots get extra margin for their tall (4-5 line) change-in-CTF/rank facet
+# titles, which ggplotly draws above each panel.
+.LEGEND_TOP_PX     <- 45L
+.TOP_MARGIN_PX     <- 120L
+.FACET_TITLE_PX    <- 75L
+
+# ggplotly names a trace mapped to two aesthetics "(Ghana,Emerging ...)"; turn
+# that into "Ghana, Emerging ..." (cliarappak's interactive_plot() does the
+# same clean-up of ggplotly's legend entries).
+.tidy_legend_names <- function(w) {
+  w$x$data <- lapply(w$x$data, function(tr) {
+    nm <- tr$name
+    if (is.character(nm) && length(nm) == 1L && grepl("^\\(.*\\)$", nm)) {
+      tr$name <- sub(",", ", ", substr(nm, 2L, nchar(nm) - 1L), fixed = TRUE)
+    }
+    tr
+  })
+  w
 }
 
 #' Convert a benchmarking ggplot to an interactive plotly
 #'
+#' Lays the title and the Weak / Emerging / Strong legend out on separate rows
+#' in a fixed-height top margin (title on top, legend under it, left-aligned)
+#' so a long title can't run into the legend, and keeps cliarappak's modebar:
+#' Download-as-PNG (at the plot's full height, so a tall scrolling plot exports
+#' whole), zoom and reset.
+#'
 #' @param p A `ggplot` from [static_plot()] / [static_plot_dyn()].
 #' @param height Pixel height, or `NULL` to let plotly decide.
+#' @param filename Base name (no extension) for the PNG download.
 #' @return A `plotly` htmlwidget.
 #' @export
-as_interactive_plot <- function(p, height = NULL) {
+as_interactive_plot <- function(p, height = NULL, filename = "cgjr_benchmark") {
+  title <- p$labels$title
+  faceted <- !inherits(p$facet, "FacetNull")
+  # legend's top edge in container coordinates; without a known height, fall
+  # back to just above the plotting area
+  legend_y <- if (is.null(height)) {
+    list(y = 1, yref = "paper", yanchor = "bottom")
+  } else {
+    list(y = 1 - .LEGEND_TOP_PX / height, yref = "container", yanchor = "top")
+  }
   plotly::ggplotly(p, tooltip = "text", height = height) |>
-    plotly::config(displayModeBar = FALSE)
+    .tidy_legend_names() |>
+    plotly::layout(
+      title = list(
+        text = if (is.null(title)) "" else paste0("<b>", title, "</b>"),
+        x = 0, xref = "paper", xanchor = "left",
+        y = 1, yref = "container", yanchor = "top", pad = list(t = 12)
+      ),
+      legend = c(list(orientation = "h", x = 0, xanchor = "left"), legend_y),
+      margin = list(t = .TOP_MARGIN_PX + if (faceted) .FACET_TITLE_PX else 0L)
+    ) |>
+    plotly::config(
+      displaylogo = FALSE,
+      modeBarButtonsToRemove = .PLOTLY_REMOVE_BUTTONS,
+      toImageButtonOptions = list(
+        filename = filename, format = "png",
+        width = 1100, height = height %||% 1000
+      )
+    )
 }
 
 #' Build the "Show notes" text for a static benchmarking chart

@@ -10,7 +10,8 @@ static_plot_dyn(
   tab_name = NULL,
   threshold = c("Default", "Terciles"),
   dots = FALSE,
-  note = NULL
+  note = NULL,
+  row_order = NULL
 )
 }
 \arguments{
@@ -29,6 +30,11 @@ to \code{\link[=def_quantiles]{def_quantiles()}}.}
 \item{dots}{Logical. Overlay hollow comparison-unit points.}
 
 \item{note}{Optional caption string.}
+
+\item{row_order}{Optional character vector of \code{indicator} values in the
+order to draw them, top to bottom (the Overall charts' fixed taxonomy
+order, as cliarappak's Overview uses its family order). \code{NULL} orders by
+the base unit's value.}
 }
 \value{
 A \code{ggplot}.
