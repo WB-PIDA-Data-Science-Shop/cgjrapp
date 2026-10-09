@@ -1,2 +1,4 @@
 # Exclude files that cause renv dependency discovery issues
 README.Rmd
+# One-off template builder; needs png/jpeg, which the app does not use
+dev/build_pptx_template.R

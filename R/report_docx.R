@@ -20,10 +20,17 @@
   }
 }
 
-.chart_png <- function(chart, meta, dir) {
+# The ggplot for an evidence-pack chart - the dashboard's own plot functions,
+# shared by the Word and PowerPoint reports. `title = FALSE` leaves the title
+# to the slide (cliarappak's PPT report does the same).
+.chart_ggplot <- function(chart, meta, title = TRUE) {
   fn <- if (chart$view == "static") static_plot else static_plot_dyn
-  p <- fn(chart$dq, meta$base_unit, tab_name = chart$title,
-          threshold = meta$threshold, dots = TRUE, row_order = chart$row_order)
+  fn(chart$dq, meta$base_unit, tab_name = if (title) chart$title,
+     threshold = meta$threshold, dots = TRUE, row_order = chart$row_order)
+}
+
+.chart_png <- function(chart, meta, dir) {
+  p <- .chart_ggplot(chart, meta)
   path <- file.path(dir, sprintf("%s_%s.png", chart$key, chart$view))
   h <- .chart_inches(chart, meta$base_unit)
   # dynamic facet titles carry the change-in-CTF/rank lines, too long for

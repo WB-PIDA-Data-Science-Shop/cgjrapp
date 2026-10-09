@@ -393,6 +393,32 @@ test_that("UI: Overall item comes after the clusters, one card per Overall chart
   }
 })
 
+test_that("UI: a branching subcluster nests inside its cluster in Overall", {
+  tx <- cgjrdata::cgjr_taxonomy
+  html <- as.character(mod_benchmark_dashboard_ui("bench", taxonomy = tx))
+  n_clusters <- length(unique(tx$cluster))
+
+  # Overall's own items: Clusters + one per cluster - PFM is not among them
+  top <- gregexpr('data-parent="#bench-acc_overall"', html, fixed = TRUE)[[1]]
+  expect_length(top, n_clusters + 1L)
+
+  # PFM's card sits in the nested accordion of its cluster's item, before the
+  # next cluster's chart
+  for (b in unique(tx$subcluster[!is.na(tx$sub_subcluster)])) {
+    parent <- unique(tx$cluster[tx$subcluster == b])
+    nested <- regexpr(sprintf('id="bench-acc_overall__%s"', parent), html, fixed = TRUE)
+    card   <- regexpr(paste0("bench-plot_overall__", b), html, fixed = TRUE)
+    expect_gt(nested, regexpr(paste0("bench-plot_overall__", parent), html, fixed = TRUE))
+    expect_gt(card, nested)
+    expect_match(substr(html, nested, card),
+                 sprintf('data-parent="#bench-acc_overall__%s"', parent), fixed = TRUE)
+    nxt <- tx$cluster[tx$cluster_num == unique(tx$cluster_num[tx$cluster == parent]) + 1L]
+    if (length(nxt)) {
+      expect_lt(card, regexpr(paste0("bench-plot_overall__", nxt[[1]]), html, fixed = TRUE))
+    }
+  }
+})
+
 test_that("server renders the Overall Clusters card from family_scores() + def_quantiles()", {
   tx <- cgjrdata::cgjr_taxonomy
   comps <- cgjrapp:::.default_comparators("GHA")

@@ -4,7 +4,12 @@
 \alias{mod_country_selection_ui}
 \title{Country / comparator selection page UI}
 \usage{
-mod_country_selection_ui(id, default_base = "GHA", ctf = cgjrdata::cgjr_ctf)
+mod_country_selection_ui(
+  id,
+  default_base = "GHA",
+  ctf = cgjrdata::cgjr_ctf,
+  taxonomy = cgjrdata::cgjr_taxonomy
+)
 }
 \arguments{
 \item{id}{Module id.}
@@ -12,6 +17,9 @@ mod_country_selection_ui(id, default_base = "GHA", ctf = cgjrdata::cgjr_ctf)
 \item{default_base}{Character \code{unit_code} to pre-select as the base unit.}
 
 \item{ctf}{Long CTF tibble the picker choices are built from.}
+
+\item{taxonomy}{\code{cgjrdata::cgjr_taxonomy} - the Downloads card's cluster
+picker.}
 }
 \value{
 A \code{shiny::tagList} - the content of the \code{"selection"}

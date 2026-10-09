@@ -4,12 +4,10 @@
 \alias{mod_report_ui}
 \title{AI Report tab UI}
 \usage{
-mod_report_ui(id, taxonomy = cgjrdata::cgjr_taxonomy)
+mod_report_ui(id)
 }
 \arguments{
 \item{id}{Module id.}
-
-\item{taxonomy}{\code{cgjrdata::cgjr_taxonomy} - supplies the cluster picker.}
 }
 \value{
 A \code{shiny::tagList} - the content of the \code{"report"}

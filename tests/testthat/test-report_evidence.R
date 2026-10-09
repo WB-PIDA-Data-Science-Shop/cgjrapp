@@ -98,47 +98,24 @@ test_that("narrative text, when given, lands under its heading", {
   expect_true(any(grepl("AI-assisted draft", s$text, fixed = TRUE)))
 })
 
-# --- the AI Report tab's data-report controls ----------------------------------
+test_that("evidence_report_pptx: template title slide, editable charts, one slide per leaf", {
+  ppt <- evidence_report_pptx(EV)
+  path <- withr::local_tempfile(fileext = ".pptx")
+  print(ppt, target = path)
+  s <- officer::pptx_summary(officer::read_pptx(path))
+  txt <- s$text[!is.na(s$text)]
 
-test_that("mod_report_ui has the cluster picker and data-report slot", {
-  html <- as.character(mod_report_ui("report"))
-  expect_match(html, "report-clusters", fixed = TRUE)
-  expect_match(html, "report-data_report_ui", fixed = TRUE)
-  for (nm in unique(cgjrdata::cgjr_taxonomy$cluster_name)) {
-    expect_match(html, nm, fixed = TRUE)
+  expect_true("Governance and Public Institutions: Ghana" %in% txt)
+  expect_true("Base country vs comparison countries" %in% txt)
+  expect_true(all(c("Clusters: overview", "Clusters: change over time",
+                    "Institutional Environment: subclusters") %in% txt))
+  for (leaf in c("Degree of Integrity", "Transparency and Accountability",
+                 "Justice and Rule of Law")) {
+    expect_true(leaf %in% txt)
   }
-})
-
-test_that("data-report button only appears for a valid selection", {
-  shiny::testServer(
-    mod_report_server,
-    args = list(
-      base_unit = shiny::reactive(c("GHA", "NGA")),
-      comparison_units = shiny::reactive(EV_COMPS),
-      threshold = shiny::reactive("Default"),
-      year_range = shiny::reactive(c(2013L, 2024L))
-    ),
-    {
-      session$setInputs(clusters = "context")
-      expect_match(paste(as.character(output$data_report_ui), collapse = " "),
-                   "exactly one base country")
-    }
-  )
-  shiny::testServer(
-    mod_report_server,
-    args = list(
-      base_unit = shiny::reactive("GHA"),
-      comparison_units = shiny::reactive(EV_COMPS),
-      threshold = shiny::reactive("Default"),
-      year_range = shiny::reactive(c(2013L, 2024L))
-    ),
-    {
-      session$setInputs(clusters = character(0))
-      expect_match(paste(as.character(output$data_report_ui), collapse = " "),
-                   "at least one cluster")
-      session$setInputs(clusters = "context")
-      expect_match(paste(as.character(output$data_report_ui), collapse = " "),
-                   "download_data_report")
-    }
-  )
+  expect_false(any(grepl("CLIAR", txt, fixed = TRUE)))   # template rebranded
+  # rvg charts are native shapes: their axis text is real slide text
+  expect_true("Closeness to frontier" %in% txt)
+  # no slide spills past the template's layouts
+  expect_identical(unique(officer::layout_summary(ppt)$master), "Custom Design")
 })

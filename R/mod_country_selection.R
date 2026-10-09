@@ -26,6 +26,10 @@
 #     as cliarappak's `observeEvent(input$groups, ...)` does for its
 #     `countries` checkbox list.
 #
+# A "Downloads" card (cliarappak's report buttons) serves the Word and
+# PowerPoint benchmarking reports for the APPLIED selection - built by
+# build_evidence() -> evidence_report_docx() / evidence_report_pptx().
+#
 # Returns a "bench"-style list of Apply-gated reactives that
 # mod_benchmark_dashboard_server() consumes.
 # ---
@@ -119,6 +123,8 @@
 }
 
 .SELECTION_FIELDS <- c("base", "comparators", "threshold", "year_range")
+# cliarappak's report-button style
+.DOWNLOAD_STYLE <- "width:100%; background-color: #204d74; color: white"
 .YEAR_MIN <- 2013L
 .YEAR_MAX <- 2024L
 
@@ -127,13 +133,19 @@
 #' @param id Module id.
 #' @param default_base Character `unit_code` to pre-select as the base unit.
 #' @param ctf Long CTF tibble the picker choices are built from.
+#' @param taxonomy `cgjrdata::cgjr_taxonomy` - the Downloads card's cluster
+#'   picker.
 #' @return A `shiny::tagList` - the content of the `"selection"`
 #'   [bs4Dash::tabItem()].
 #' @export
 mod_country_selection_ui <- function(id, default_base = "GHA",
-                                     ctf = cgjrdata::cgjr_ctf) {
+                                     ctf = cgjrdata::cgjr_ctf,
+                                     taxonomy = cgjrdata::cgjr_taxonomy) {
   ns <- shiny::NS(id)
   choices <- .unit_choices(ctf)
+  tx <- as.data.frame(taxonomy)
+  tx <- tx[order(tx$cluster_num), ]
+  cluster_choices <- stats::setNames(unique(tx$cluster), unique(tx$cluster_name))
 
   shiny::tagList(
     shiny::fluidRow(
@@ -217,7 +229,24 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
       )
     ),
 
-    shiny::uiOutput(ns("apply_ui"))
+    shiny::uiOutput(ns("apply_ui")),
+
+    shiny::fluidRow(style = "height: 15px;"),
+
+    # cliarappak's report downloads: Word and PowerPoint, built from the
+    # APPLIED selection by build_evidence()
+    bs4Dash::bs4Card(
+      title = "Downloads",
+      status = "success",
+      solidHeader = TRUE,
+      width = 12,
+      collapsible = TRUE,
+      shiny::checkboxGroupInput(
+        ns("report_clusters"), "Clusters to include", inline = TRUE,
+        choices = cluster_choices, selected = unname(cluster_choices)
+      ),
+      shiny::uiOutput(ns("downloads_ui"))
+    )
   )
 }
 
@@ -325,6 +354,74 @@ mod_country_selection_server <- function(id, default_base = "GHA") {
       shiny::updateSelectInput(session, "threshold", selected = s$threshold)
       shiny::updateSliderInput(session, "year_range", value = s$year_range)
     })
+
+    # --- report downloads (cliarappak's Editable / PPT report buttons) ---
+    download_problem <- shiny::reactive({
+      if (length(applied_state$base_unit) != 1L) {
+        "Reports need exactly one base country - select one and Apply."
+      } else if (length(setdiff(applied_state$comparison_units,
+                                applied_state$base_unit)) < 2L) {
+        "Reports need at least 2 comparators - select them and Apply."
+      } else if (length(input$report_clusters) == 0L) {
+        "Pick at least one cluster to include."
+      } else {
+        NULL
+      }
+    })
+
+    output$downloads_ui <- shiny::renderUI({
+      msg <- download_problem()
+      btn <- function(id, label, icon) {
+        if (is.null(msg)) {
+          shiny::downloadButton(ns(id), label, icon = icon, style = .DOWNLOAD_STYLE)
+        } else {
+          shiny::tags$button(type = "button", class = "btn", disabled = NA,
+                             style = .DOWNLOAD_STYLE, icon, label)
+        }
+      }
+      shiny::tagList(
+        shiny::fluidRow(
+          shiny::column(3, btn("report_docx", "Word report", shiny::icon("file-word"))),
+          shiny::column(3, btn("report_pptx", "PPT report", shiny::icon("file-powerpoint")))
+        ),
+        shiny::helpText(
+          msg %||% paste(
+            "Pre-populated reports for the applied selection: the benchmarking",
+            "charts and tables computed by the dashboard (no AI-generated text)."
+          )
+        )
+      )
+    })
+
+    applied_evidence <- function() {
+      build_evidence(applied_state$base_unit, applied_state$comparison_units,
+                     applied_state$threshold, applied_state$year_range,
+                     clusters = input$report_clusters)
+    }
+    report_file <- function(ext) {
+      function() paste0("GOVCGJR_report_", applied_state$base_unit[[1]], "_",
+                        format(Sys.Date(), "%Y%m%d"), ".", ext)
+    }
+
+    output$report_docx <- shiny::downloadHandler(
+      filename = report_file("docx"),
+      content = function(file) {
+        shiny::req(is.null(download_problem()))
+        shiny::withProgress(message = "Compiling Word report...", value = 0.3, {
+          print(evidence_report_docx(applied_evidence()), target = file)
+        })
+      }
+    )
+
+    output$report_pptx <- shiny::downloadHandler(
+      filename = report_file("pptx"),
+      content = function(file) {
+        shiny::req(is.null(download_problem()))
+        shiny::withProgress(message = "Compiling PowerPoint report...", value = 0.3, {
+          print(evidence_report_pptx(applied_evidence()), target = file)
+        })
+      }
+    )
 
     list(
       base_unit        = shiny::reactive(applied_state$base_unit),

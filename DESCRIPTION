@@ -31,6 +31,7 @@ Imports:
     officer,
     plotly,
     purrr,
+    rvg,
     shiny (>= 1.8.0),
     shinyWidgets,
     stats,

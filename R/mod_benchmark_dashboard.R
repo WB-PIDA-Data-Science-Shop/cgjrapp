@@ -135,13 +135,33 @@ mod_benchmark_dashboard_ui <- function(id, taxonomy = cgjrdata::cgjr_taxonomy) {
     )
   })
 
-  # Overall: one card per .overall_charts() entry, the Clusters chart open
+  # Overall: one card per .overall_charts() entry, nested as the taxonomy is -
+  # the Clusters chart (open), then each cluster's chart with, inside it, a
+  # nested accordion for any subcluster that branches further (e.g. Public
+  # Financial Management under its cluster, not beside the clusters)
   charts <- .overall_charts(taxonomy)
-  overall_panels <- lapply(seq_along(charts), function(i) {
+  is_branch <- vapply(charts, function(ch) identical(ch$parent_col, "subcluster"),
+                      logical(1))
+  branch_cluster <- vapply(charts, function(ch) {
+    if (!identical(ch$parent_col, "subcluster")) return(NA_character_)
+    unique(taxonomy$cluster[taxonomy$subcluster == ch$parent])[[1]]
+  }, character(1))
+
+  overall_panels <- lapply(which(!is_branch), function(i) {
     ch <- charts[[i]]
+    kids <- charts[is_branch & branch_cluster %in% ch$parent]
+    nested <- if (length(kids) && identical(ch$parent_col, "cluster")) {
+      bs4Dash::accordion(
+        id = ns(paste0("acc_", ch$key)),
+        .list = lapply(kids, function(k) bs4Dash::accordionItem(
+          title = k$label, .leaf_card_ui(ns, key = k$key, label = k$label)
+        ))
+      )
+    }
     bs4Dash::accordionItem(
       title = ch$label, collapsed = i != 1L,
-      .leaf_card_ui(ns, key = ch$key, label = ch$label)
+      .leaf_card_ui(ns, key = ch$key, label = ch$label),
+      nested
     )
   })
   overall <- bs4Dash::accordionItem(

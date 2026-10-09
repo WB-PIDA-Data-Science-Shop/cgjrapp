@@ -7,15 +7,11 @@
 #' AI Report tab UI
 #'
 #' @param id Module id.
-#' @param taxonomy `cgjrdata::cgjr_taxonomy` - supplies the cluster picker.
 #' @return A `shiny::tagList` - the content of the `"report"`
 #'   [bs4Dash::tabItem()].
 #' @export
-mod_report_ui <- function(id, taxonomy = cgjrdata::cgjr_taxonomy) {
+mod_report_ui <- function(id) {
   ns <- shiny::NS(id)
-  tx <- as.data.frame(taxonomy)
-  tx <- tx[order(tx$cluster_num), ]
-  cluster_choices <- stats::setNames(unique(tx$cluster), unique(tx$cluster_name))
 
   shiny::tagList(
     bs4Dash::bs4Card(
@@ -32,13 +28,6 @@ mod_report_ui <- function(id, taxonomy = cgjrdata::cgjr_taxonomy) {
       solidHeader = TRUE,
       width = 12,
       collapsible = FALSE,
-
-      shiny::checkboxGroupInput(
-        ns("clusters"), "Clusters to include",
-        choices = cluster_choices, selected = unname(cluster_choices)
-      ),
-      shiny::uiOutput(ns("data_report_ui")),
-      shiny::hr(),
 
       shiny::fluidRow(
         shiny::column(
@@ -80,7 +69,6 @@ mod_report_ui <- function(id, taxonomy = cgjrdata::cgjr_taxonomy) {
 mod_report_server <- function(id, base_unit, comparison_units, threshold,
                               year_range) {
   shiny::moduleServer(id, function(input, output, session) {
-    ns <- session$ns
 
     r_text  <- shiny::reactiveVal("")
     r_gen   <- shiny::reactiveVal(FALSE)
@@ -180,48 +168,6 @@ mod_report_server <- function(id, base_unit, comparison_units, threshold,
         )
       )
     })
-
-    # --- data-only report (Phase 1: no LLM) ---
-    report_problem <- shiny::reactive({
-      if (length(base_unit()) != 1L) {
-        "Select exactly one base country (and Apply) for a report."
-      } else if (length(setdiff(comparison_units(), base_unit())) < 2L) {
-        "Select at least 2 comparators (and Apply) for a report."
-      } else if (length(input$clusters) == 0L) {
-        "Pick at least one cluster to include."
-      } else {
-        NULL
-      }
-    })
-
-    output$data_report_ui <- shiny::renderUI({
-      msg <- report_problem()
-      if (!is.null(msg)) return(shiny::helpText(msg))
-      shiny::tagList(
-        shiny::downloadButton(ns("download_data_report"), "Data report (Word)",
-                              icon = shiny::icon("file-word")),
-        shiny::helpText(
-          "Charts, tables and an evidence register computed by the dashboard ",
-          "for the applied selection - no AI-generated text."
-        )
-      )
-    })
-
-    output$download_data_report <- shiny::downloadHandler(
-      filename = function() {
-        paste0("CGJR_data_report_", base_unit()[[1]], "_",
-               format(Sys.Date(), "%Y%m%d"), ".docx")
-      },
-      content = function(file) {
-        shiny::req(is.null(report_problem()))
-        shiny::withProgress(message = "Building the data report...", value = 0.2, {
-          ev <- build_evidence(base_unit(), comparison_units(), threshold(),
-                               year_range(), clusters = input$clusters)
-          shiny::incProgress(0.4, detail = "Drawing charts")
-          print(evidence_report_docx(ev), target = file)
-        })
-      }
-    )
 
     output$download_docx <- shiny::downloadHandler(
       filename = function() {

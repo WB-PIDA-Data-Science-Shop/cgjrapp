@@ -189,3 +189,52 @@ test_that("pickers are cliarappak's pickerInput with flags, search and select-al
   expect_match(html, 'data-live-search="true"', fixed = TRUE)
   expect_match(html, 'data-actions-box="true"', fixed = TRUE)
 })
+
+# --- Downloads card: Word / PPT reports on the APPLIED selection --------------
+
+test_that("UI has the Downloads card with the cluster picker", {
+  html <- as.character(mod_country_selection_ui("selection"))
+  expect_match(html, "Downloads", fixed = TRUE)
+  expect_match(html, "selection-report_clusters", fixed = TRUE)
+  expect_match(html, "selection-downloads_ui", fixed = TRUE)
+  for (nm in unique(cgjrdata::cgjr_taxonomy$cluster_name)) {
+    expect_match(html, nm, fixed = TRUE)
+  }
+})
+
+test_that("report buttons follow the applied selection, not the live pickers", {
+  shiny::testServer(mod_country_selection_server, args = list(default_base = "GHA"), {
+    session$setInputs(report_clusters = "context")
+    # the default applied selection (GHA vs region-mates) is reportable
+    ui <- paste(as.character(output$downloads_ui), collapse = " ")
+    expect_match(ui, "-report_docx\"", fixed = TRUE)
+    expect_match(ui, "-report_pptx\"", fixed = TRUE)
+
+    # changing the pickers without Apply changes nothing
+    session$setInputs(base = c("GHA", "NGA"))
+    expect_match(paste(as.character(output$downloads_ui), collapse = " "),
+                 "-report_docx\"", fixed = TRUE)
+
+    # applying two base countries disables the buttons, with a reason
+    session$setInputs(comparators = c("SEN", "CIV", "BEN"), threshold = "Default",
+                      year_range = c(2013L, 2024L), apply = 1)
+    ui <- paste(as.character(output$downloads_ui), collapse = " ")
+    expect_match(ui, "exactly one base country", fixed = TRUE)
+    expect_no_match(ui, "-report_docx\"", fixed = TRUE)
+
+    session$setInputs(base = "GHA", apply = 2, report_clusters = character(0))
+    expect_match(paste(as.character(output$downloads_ui), collapse = " "),
+                 "at least one cluster", fixed = TRUE)
+  })
+})
+
+test_that("Word download writes a report for the applied selection", {
+  shiny::testServer(mod_country_selection_server, args = list(default_base = "GHA"), {
+    session$setInputs(report_clusters = "institutional_environment")
+    path <- output$report_docx
+    expect_true(file.exists(path))
+    s <- officer::docx_summary(officer::read_docx(path))
+    expect_true("Institutional Environment" %in% s$text)
+    expect_false("Context" %in% s$text[s$style_name == "heading 1"])
+  })
+})
