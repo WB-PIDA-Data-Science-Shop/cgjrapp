@@ -5,11 +5,6 @@
 # bench-style selection the dashboard uses (base_unit / comparison_units /
 # ctf_type / year_range). The dynamic view uses even years only, matching the
 # dashboard (cliarappak parity).
-#
-# export_live_scores() is the per-selection composite: screened + averaged for
-# THIS comparison group. Not displayed as its own table anywhere (cliarappak's
-# benchmarking tab doesn't show one either) - it exists to feed the AI Report
-# prompt (mod_report.R / utils_report.R).
 # ---
 
 .taxonomy_name_cols <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
@@ -103,60 +98,6 @@ export_raw_table <- function(base_unit, comparison_units = character(0),
       Variable         = .data$variable,
       Value            = round(.data$value, 4)
     )
-}
-
-#' Live per-selection composite scores (feeds the AI Report prompt)
-#'
-#' One row per leaf (per year for the dynamic view): the screened + averaged
-#' composite for the base unit, from [compute_family_average_app()]. Not
-#' displayed as its own table anywhere in the app - `mod_report.R` is the only
-#' caller, using it to build the AI Report's system prompt.
-#'
-#' @inheritParams export_ctf_table
-#' @return A tibble with `Cluster`, `Leaf`, `Year` (dynamic), `Composite`,
-#'   `Indicators used`, `Indicators observed`.
-#' @export
-export_live_scores <- function(base_unit, comparison_units,
-                               ctf_type = c("static", "dynamic"),
-                               year_range = NULL,
-                               ctf = cgjrdata::cgjr_ctf,
-                               taxonomy = cgjrdata::cgjr_taxonomy) {
-  ctf_type <- match.arg(ctf_type)
-  units <- unique(c(base_unit, comparison_units))
-  slice <- filter_unit_data(NULL, ctf_type, units, year_range = year_range,
-                            even_years = identical(ctf_type, "dynamic"), ctf = ctf)
-  fam <- compute_family_average_app(
-    slice, base_unit, comparison_units, type = ctf_type
-  ) |>
-    dplyr::filter(.data$unit_code %in% base_unit)
-
-  tx <- as.data.frame(taxonomy)
-  tx$leaf <- dplyr::coalesce(tx$sub_subcluster, tx$subcluster)
-  tx$leaf_name <- dplyr::coalesce(tx$sub_subcluster_name, tx$subcluster_name)
-  tx$leaf_ord <- dplyr::coalesce(tx$sub_subcluster_num, 0) + tx$subcluster_num * 100 +
-    tx$cluster_num * 10000
-
-  # scaffold every leaf so a leaf the screen wiped still shows (blank composite)
-  out <- dplyr::left_join(
-    tx[, c("leaf", "leaf_name", "cluster_name", "leaf_ord")],
-    fam, by = "leaf"
-  ) |>
-    dplyr::arrange(.data$leaf_ord)
-
-  cols <- c(
-    Cluster                = "cluster_name",
-    Leaf                   = "leaf_name",
-    if ("year" %in% names(out)) c(Year = "year"),
-    Composite              = "score",
-    `Indicators used`      = "n_inputs",
-    `Indicators observed`  = "n_inputs_obs"
-  )
-  out <- dplyr::select(out, dplyr::all_of(cols))
-  out$Composite <- round(out$Composite, 4)
-  # a leaf with no eligible indicators is scaffolded in with 0, not NA
-  out$`Indicators used`     <- dplyr::coalesce(out$`Indicators used`, 0L)
-  out$`Indicators observed` <- dplyr::coalesce(out$`Indicators observed`, 0L)
-  out
 }
 
 #' The indicator catalogue (`cgjrdata::cgjr_crosswalk`, tidied for display)

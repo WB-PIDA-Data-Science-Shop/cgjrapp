@@ -41,9 +41,9 @@ package.
 - **Data tab.** Download the live composite scores, the precomputed
   `cgjr_scores` reference (a *different* calculation, labelled as such), the
   indicator-level CTF and raw values, and the full indicator catalogue.
-- **AI Report tab.** Draft a governance chapter from the current selection's
-  scores and download it as Word (LLM provider is configured by environment
-  variable).
+- **AI Report tab.** Draft the governance chapter, or one cluster or
+  section of it, following the CGJR guidance note, and ask questions in the
+  Chat. Every citation and figure is checked automatically (see below).
 
 Composite scores are **computed live for the chosen comparison group** — a
 deliberate port of the CLIAR methodology (`def_quantiles()` /
@@ -72,6 +72,71 @@ pak::pak("WB-PIDA-Data-Science-Shop/cgjrapp")
 library(cgjrapp)
 run_cgjrapp()
 ```
+
+## AI Report and Chat
+
+The **AI Report** tab drafts the governance chapter (the full chapter, one
+cluster, or one section) following the CGJR guidance note's structure: for
+each area, what the data show, why it matters for growth and jobs, and the
+questions the country team still has to answer, then possible
+recommendations. The **Chat** sub-tab answers questions from the guidance and
+the applied selection's data.
+
+Every figure comes from the dashboard's evidence pack and is cited `[E12]`;
+every guidance-derived statement cites a passage `[G1.2-3]`. The app then
+checks the text itself (`verify_text()`): cited ids must exist, figures must
+match the facts they cite, and studies must be in the guidance's reference
+list. In the chat, anything from outside the sources has to sit under a
+"Beyond the guidance (general knowledge, not verified)" heading. Hover a
+citation to see its source.
+
+### Configuring the LLM
+
+The provider is set by environment variables. Put them in your user-level
+`~/.Renviron` (never a file inside the repo), or in the Posit Connect
+environment panel:
+
+```
+CGJR_LLM_BASE_URL=...   # an OpenAI-compatible endpoint
+CGJR_LLM_MODEL=...
+CGJR_LLM_API_KEY=...
+```
+
+For testing, Google Gemini's free tier works through its OpenAI-compatible
+endpoint. Create a key at <https://aistudio.google.com/apikey>, then set:
+
+```
+CGJR_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+CGJR_LLM_MODEL=gemini-2.5-flash
+CGJR_LLM_API_KEY=<your key>
+```
+
+Gemini's free tier has a small daily quota per model (20 requests a day for
+the current Flash model in October 2026). A full chapter uses 6 requests,
+plus one per chat question; check your usage at <https://ai.dev/rate-limit>.
+Brief overloads (HTTP 503) and per-minute limits are retried automatically.
+If a run still fails part-way, **Resume** writes only the parts that are
+missing.
+
+Switching to WBG mAI means changing these three variables; no code changes
+are needed.
+
+### Which guidance the AI uses
+
+The guidance note is **Official Use Only**, so it is never committed, and by
+default it is never sent to an LLM. `CGJR_GUIDANCE_SOURCE` controls which
+guidance is used:
+
+- `standin` (default): a synthetic stand-in with the same section structure
+  (`inst/guidance_standin/`). It is safe with any provider, and the tests use
+  it.
+- `real`: the guidance note itself. **Use this only with an approved endpoint
+  (WBG mAI).** Build its passages once with `data-raw/guidance_passages.R`
+  from the PDF in `inst/docs/` (gitignored). The resulting rds is deployed
+  with the app from your machine, or you can point `CGJR_GUIDANCE_PATH` at it.
+
+A live smoke test against the configured provider runs only when you ask for
+it: `Sys.setenv(CGJR_LLM_LIVE_TEST = "true"); devtools::test(filter = "llm-live")`.
 
 ## The taxonomy
 

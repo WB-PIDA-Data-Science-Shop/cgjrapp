@@ -4,14 +4,21 @@
 \alias{evidence_report_docx}
 \title{Build the AI Report Word document from an evidence pack}
 \usage{
-evidence_report_docx(evidence, narrative = NULL)
+evidence_report_docx(evidence, narrative = NULL, leaves = NULL, ai = NULL)
 }
 \arguments{
 \item{evidence}{Output of \code{\link[=build_evidence]{build_evidence()}}.}
 
 \item{narrative}{Optional named list of Markdown text, keyed \code{"overview"},
-a cluster key, or a leaf key, inserted under that heading (Phase 3: the
-LLM's text). \code{NULL} gives the data-only report.}
+\code{"prioritization"}, a cluster key, a leaf key, or \code{"recommendations"}.
+\code{NULL} gives the data-only report.}
+
+\item{leaves}{Optional leaf keys: report only these sections (and skip the
+Overview and cluster-average charts) - the AI Report's one-section scope.}
+
+\item{ai}{Optional list for the AI-assisted version: \code{guidance} (output of
+\code{\link[=load_guidance]{load_guidance()}}), \code{cited} (data frame \code{id}, \code{section}, \code{title}, \code{page})
+and \code{verification} (output of \code{\link[=verify_text]{verify_text()}}).}
 }
 \value{
 An \code{officer} \code{rdocx}; write it with \code{print(doc, target = path)}.
@@ -22,6 +29,12 @@ data-driven priority areas), then one chapter per selected cluster: its
 subcluster-average chart and table, then each leaf's indicator chart,
 indicator table, dynamic changes and excluded indicators, and the areas not
 yet measured. An appendix lists every fact with its evidence id.
+}
+\details{
+With an AI narrative (\code{\link[=parse_narrative]{parse_narrative()}}), each section's text goes under
+its heading; \code{"prioritization"} follows the priority-areas table,
+\code{"recommendations"} and a data-limitations note close the chapter, and the
+appendices add the guidance passages cited and the automated verification.
 }
 \seealso{
 \code{\link[=build_evidence]{build_evidence()}}, \code{\link[=priority_areas]{priority_areas()}}

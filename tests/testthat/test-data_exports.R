@@ -29,22 +29,6 @@ test_that("export_raw_table is country-grain and ignores non-country comparators
   expect_true(all(c("Cluster", "Indicator", "Value") %in% names(d)))
 })
 
-test_that("export_live_scores has one row per taxonomy leaf, empty leaves scaffolded", {
-  d <- export_live_scores(BASE, COMPS, "static")
-  tx <- cgjrdata::cgjr_taxonomy
-  leaf_names <- dplyr::coalesce(tx$sub_subcluster_name, tx$subcluster_name)
-  expect_setequal(d$Leaf, leaf_names)
-  # domestic_revenue_mobilization has no indicators -> NA composite, 0 used
-  drm <- d[d$Leaf == "Domestic Revenue Mobilization", ]
-  expect_true(is.na(drm$Composite))
-  expect_identical(drm$`Indicators used`, 0L)
-  # a populated leaf matches a direct compute_family_average_app call
-  slice <- filter_unit_data("justice_and_rule_of_law", "static", c(BASE, COMPS))
-  fam <- compute_family_average_app(slice, BASE, COMPS, type = "static")
-  expect_equal(d$Composite[d$Leaf == "Justice and Rule of Law"],
-               round(fam$score[fam$unit_code == BASE], 4))
-})
-
 test_that("export_indicator_catalogue is the full crosswalk, display-tidied", {
   d <- export_indicator_catalogue()
   expect_equal(nrow(d), nrow(cgjrdata::cgjr_crosswalk))

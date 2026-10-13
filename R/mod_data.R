@@ -6,9 +6,8 @@
 #   Catalogue   -- the full indicator crosswalk / methodology reference.
 #
 # No composite-score table here - cliarappak's benchmarking tab doesn't
-# surface one either; the live composite is computed only where cgjrapp
-# actually needs a number to work with (the AI Report prompt, via
-# export_live_scores()), never displayed as its own table.
+# surface one either; the AI Report works from the evidence pack
+# (build_evidence()), never from a composite-score table.
 
 .dt <- function(df, filename) {
   DT::datatable(

@@ -16,3 +16,4 @@
 ^\.github$
 ^data-raw$
 ^inst/docs$
+^\.plans$

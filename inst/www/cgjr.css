@@ -7,3 +7,67 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* AI Report / Chat: citation badges. Hover shows the source (fact sentence,
+   or guidance section, page and passage). */
+.cgjr-cite {
+  display: inline-block;
+  padding: 0 .35em;
+  margin: 0 .1em;
+  border-radius: .25rem;
+  font-size: .75em;
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: baseline;
+  cursor: help;
+  white-space: nowrap;
+}
+.cgjr-cite-e   { background: #dbe9fb; color: #0b3d75; }
+.cgjr-cite-g   { background: #dcefdc; color: #1d5a1d; }
+.cgjr-cite-bad { background: #f8d7da; color: #842029; text-decoration: line-through; }
+
+.cgjr-verify {
+  margin-top: .75em;
+  padding: .4em .6em;
+  border-left: 3px solid;
+  font-size: .85em;
+}
+.cgjr-verify ul { margin: .25em 0 0 0; padding-left: 1.2em; }
+.cgjr-verify-ok   { border-color: #238823; background: #f1f8f1; }
+.cgjr-verify-warn { border-color: #FFBF00; background: #fff8e1; }
+
+.cgjr-ai-section { margin-bottom: 1.5em; }
+.cgjr-ai-section h4 { margin-top: 1em; border-bottom: 1px solid #dee2e6; padding-bottom: .25em; }
+.cgjr-ai-section h5 { margin-top: .8em; }
+
+/* shinychat is styled with Bootstrap 5 variables; this page is Bootstrap 4
+   (bs4Dash), so define the ones it reads, scoped to the chat. */
+.cgjr-chat {
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: rgba(33, 37, 41, .75);
+  --bs-secondary-bg: #e9ecef;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-border-color: #dee2e6;
+  --bs-border-radius: .375rem;
+  --bs-primary: #051f3f;
+  --bs-primary-rgb: 5, 31, 63;
+  --bs-link-color: #0b5ed7;
+  --bs-font-sans-serif: inherit;
+  border: 1px solid #dee2e6;
+  border-radius: .375rem;
+  padding: .5em;
+}
+/* the narrative's own subheadings ("What the data show", ...) sit below the
+   section title, not above it */
+.cgjr-ai-section .shiny-html-output h4,
+.cgjr-ai-section .shiny-html-output h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: none;
+  margin-top: .75em;
+  padding-bottom: 0;
+}

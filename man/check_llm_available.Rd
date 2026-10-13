@@ -2,33 +2,16 @@
 % Please edit documentation in R/utils_llm.R
 \name{check_llm_available}
 \alias{check_llm_available}
-\title{Check LLM Availability}
+\title{Check whether the configured LLM endpoint is reachable and accepts the key}
 \usage{
 check_llm_available()
 }
 \value{
-Logical scalar. \code{TRUE} if the endpoint responds within 5 seconds;
-\code{FALSE} otherwise.
+\code{"ok"}, \code{"auth"} (the key was rejected) or \code{"unreachable"}.
 }
 \description{
-Performs a lightweight HTTP GET to the configured LLM base URL with a
-5-second timeout. Used before attempting report generation to surface a
-clear, user-friendly error message if the endpoint is unreachable, rather
-than silently failing during streaming.
-
-Returns \code{FALSE} for any error (connection refused, timeout, DNS failure,
-HTTP error response), and \code{TRUE} only when the server responds at all -
-even a 404 counts as "reachable" because it indicates the server is running.
+A 5-second \verb{GET \{base_url\}/models} with the API key. 401/403, or a 400
+that complains about the API key (Gemini), mean the key was rejected; any
+other HTTP response counts as reachable (some servers don't implement
+\verb{/models}).
 }
-\details{
-Check whether the configured LLM endpoint is reachable
-}
-\examples{
-\dontrun{
-if (!check_llm_available()) {
-  stop("LLM endpoint is not reachable. Check CGJR_LLM_BASE_URL.")
-}
-}
-
-}
-\keyword{internal}

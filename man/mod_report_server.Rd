@@ -4,15 +4,28 @@
 \alias{mod_report_server}
 \title{AI Report tab server}
 \usage{
-mod_report_server(id, base_unit, comparison_units, threshold, year_range)
+mod_report_server(
+  id,
+  base_unit,
+  comparison_units,
+  threshold,
+  year_range,
+  chat_factory = llm_chat,
+  guidance = NULL
+)
 }
 \arguments{
 \item{id}{Module id.}
 
 \item{base_unit, comparison_units, threshold, year_range}{Reactives from
-\code{\link[=mod_country_selection_server]{mod_country_selection_server()}}. \code{base_unit()} may be a multi-unit
-selection elsewhere in the app, but report generation requires exactly
-one (a narrative chapter needs a single focal unit) and errors otherwise.}
+\code{\link[=mod_country_selection_server]{mod_country_selection_server()}}. The AI features need a single base
+country; with fewer than 2 comparators its region is used.}
+
+\item{chat_factory}{Function \code{system_prompt -> Chat} (default \code{\link[=llm_chat]{llm_chat()}});
+a seam for tests.}
+
+\item{guidance}{Output of \code{\link[=load_guidance]{load_guidance()}} (default: loaded per
+\code{CGJR_GUIDANCE_SOURCE}).}
 }
 \value{
 Invisibly \code{NULL}.

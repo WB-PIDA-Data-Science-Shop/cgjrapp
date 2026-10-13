@@ -1,0 +1,291 @@
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+Stand-in guidance for the governance and public institutions chapter
+Contents
+Overview ........................................................................ 2
+Objective ....................................................................... 2
+Why a chapter on governance and public institutions? ............................ 2
+Theory of change ................................................................ 2
+Prioritization .................................................................. 3
+1. Institutional Environment .................................................... 4
+1.1. Degree of Integrity ........................................................ 4
+1.2. Transparency and Accountability ............................................ 4
+1.3. Justice and Rule of Law .................................................... 5
+2. Efficiency and Effectiveness of Core Government Functions .................... 6
+2.1. Public Financial Management ................................................ 6
+2.1.1. Budget Cycle and Fiscal Planning ......................................... 6
+2.1.2. Domestic Revenue Mobilization ............................................ 7
+2.1.3. Public Procurement ....................................................... 7
+2.1.4. Public Investment Management ............................................. 8
+2.2. Public Sector HRM .......................................................... 8
+2.3. Digital and Data ........................................................... 9
+3. Efficiency and Effectiveness beyond Core Government Functions ................ 10
+3.1. Market Regulatory Institutions ............................................. 10
+3.2. Service Delivery ........................................................... 10
+3.3. State-Owned Enterprises Governance ......................................... 11
+4. Context ...................................................................... 12
+4.1. Political Institutions ..................................................... 12
+4.2. Social Cohesion, Norms and Cooperation ..................................... 12
+5. Possible Recommendations ..................................................... 13
+Box 1 Political economy of reform ............................................... 13
+Glossary of Data Sources ........................................................ 14
+References ...................................................................... 15
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+2
+Overview
+Objective
+This stand-in note describes how a country team could structure a chapter on governance and public institutions for a growth and jobs report. It exists only so the dashboard's AI features can be developed and tested without the official guidance note.
+Why a chapter on governance and public institutions?
+Whatever growth strategy a country pursues, it depends on public institutions that can turn policy decisions into delivered results. Governments that can raise revenue, spend it well and enforce rules impartially are better placed to provide public goods and to give firms the confidence to invest (Besley and Persson 2011).
+A governance chapter therefore sits upstream of the other chapters of the report: it asks whether the state can implement the reforms they recommend.
+Theory of change
+Public institutions affect growth and jobs through three pillars.
+1. Building the Foundation. Capable institutions deliver the infrastructure and human capital on which productivity depends, through better spending and better service delivery.
+2. Improving the Business Environment. Predictable, impartial and low-cost rules reduce transaction costs for firms and workers.
+3. Mobilizing Private Capital. Transparent and credible institutions lower the risk that investors price in, which lowers the cost of capital for the private sector and for the government.
+Three areas are directly actionable: the institutional environment, the efficiency and effectiveness of core government functions, and the efficiency and effectiveness of government beyond its core functions. The fourth area, context, covers political institutions and social cohesion; these are critical assumptions that shape whether reforms in the other areas are feasible (World Bank 2017).
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+3
+Prioritization
+A chapter should not try to cover every area in equal depth. Teams should first establish whether governance is a binding constraint on growth and jobs in the country, and then focus on the few clusters where the gap to comparators is largest and where reform is most relevant to the country's growth strategy.
+Benchmarking data such as closeness-to-frontier scores are a starting point for this choice. They should be complemented with country-specific data and with consultations with the country team and government counterparts.
+Table 1. Governance and other chapters of the report
+Weak investment or firm entry: check justice and rule of law, transparency and accountability, and degree of integrity.
+High informality: check market regulatory institutions and justice and rule of law.
+Fiscal constraints: check public financial management and transparency and accountability.
+Market distortions: check market regulatory institutions and state-owned enterprises governance.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+4
+1. Institutional Environment
+This cluster covers the environment in which all public institutions operate: whether officials act with integrity, whether government action is visible and accountable, and whether laws are enforced impartially. Weaknesses here raise risk and cost for every economic actor (Acemoglu, Johnson and Robinson 2001).
+1.1. Degree of Integrity
+Degree of integrity refers to the absence of corruption in public institutions, understood as the use of public office for private gain. Corruption misallocates public resources in the short run and erodes trust in the state in the long run.
+Table 2. Degree of Integrity and the links to the Jobs Strategy Pillars
+Building the Foundation: fewer bribes and leakages mean public money reaches schools, clinics and roads.
+Improving the Business Environment: fewer discretionary interactions with officials lower the cost of doing business.
+Mobilizing Private Capital: credible anti-corruption enforcement reduces the political risk investors face.
+Table 3. Potential questions and analysis on Degree of Integrity
+• Is corruption mainly petty, in procurement, or at the level of policy capture?
+• Are anti-corruption laws enforced for senior and junior officials alike?
+• Are audit and anti-corruption bodies independent and effective?
+Data sources: the dashboard's integrity indicators; perception indices; enterprise survey questions on bribery.
+1.2. Transparency and Accountability
+This area covers the institutions that make government action visible to citizens and that let them hold officials to account, such as access to information, budget transparency and audit.
+Table 4. Transparency and Accountability and the links to the Jobs Strategy Pillars
+Building the Foundation: published budgets and independent audits improve the quality of public spending.
+Improving the Business Environment: publishing regulatory and procurement decisions narrows the information gap between the state and firms.
+Mobilizing Private Capital: consistent disclosure of fiscal information signals predictability to investors.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+5
+Table 5. Potential questions and analysis on Transparency and Accountability
+• Are laws, budgets and audit reports published and accessible in practice?
+• Can citizens request government information, and do requests get answered?
+• Do audit findings lead to follow-up action by the executive and parliament?
+Data sources: the dashboard's transparency indicators; open budget assessments; supreme audit institution reports.
+1.3. Justice and Rule of Law
+This area covers the courts and other institutions that resolve disputes, protect property and contract rights, and constrain abuse of power. Slow, costly or biased justice raises transaction costs and discourages investment.
+Table 6. Justice and Rule of Law and the links to the Jobs Strategy Pillars
+Building the Foundation: affordable access to justice lets small firms and vulnerable groups protect their rights and assets.
+Improving the Business Environment: reliable contract enforcement and faster courts make legal remedies credible.
+Mobilizing Private Capital: an independent judiciary signals legal stability and lowers country risk premiums.
+Table 7. Potential questions and analysis on Justice and Rule of Law
+• Are courts independent of political influence, including in disputes against the state?
+• Can citizens and small firms afford civil justice, and how long do cases take?
+• Are alternative dispute resolution mechanisms available and trusted?
+Data sources: the dashboard's justice indicators; rule of law indices; court backlog and case duration statistics.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+6
+2. Efficiency and Effectiveness of Core Government Functions
+This cluster looks at government as an organization: how it manages money, people and information. Strong core functions let every other government activity run efficiently. Teams may also apply the questions below at the subnational level where subnational governments carry most implementation.
+2.1. Public Financial Management
+Public financial management is the set of rules, systems and processes for planning, executing, controlling and reporting on public money. It supports fiscal discipline, strategic allocation and value for money.
+2.1.1. Budget Cycle and Fiscal Planning
+Table 8. Budget Cycle and Fiscal Planning and the links to the Jobs Strategy Pillars
+Building the Foundation: better prioritization and expenditure control create fiscal space for development spending.
+Improving the Business Environment: paying suppliers on time improves firms' liquidity.
+Mobilizing Private Capital: a credible budget and sustainable debt reduce risk for investors.
+Table 9. Potential questions and analysis on the Budget Cycle and Fiscal Planning
+• Are budgets prepared and executed on schedule, with few in-year revisions?
+• Is there a medium-term fiscal framework that actually shapes the annual budget?
+• Are fiscal risks from state-owned enterprises and subnational governments monitored?
+Data sources: the dashboard's budget indicators; public expenditure and financial accountability assessments.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+7
+2.1.2. Domestic Revenue Mobilization
+This area covers the administration of taxes: registration, filing, audit, collection and dispute resolution.
+Table 10. Domestic Revenue Mobilization and the links to the Jobs Strategy Pillars
+Building the Foundation: effective tax administration raises revenue for public investment.
+Improving the Business Environment: simple filing and payment lower compliance costs for firms.
+Mobilizing Private Capital: stronger revenue improves fiscal stability.
+Table 11. Potential questions and analysis on Domestic Revenue Mobilization
+• Does the revenue authority have operational autonomy and a function-based structure?
+• Are audits selected on risk, and are e-filing and e-payment widely used?
+• Are tax exemptions documented and reviewed?
+Data sources: tax administration diagnostic assessments; revenue administration surveys.
+2.1.3. Public Procurement
+This area covers how government buys goods, works and services, from planning to contract management.
+Table 12. Public Procurement and the links to the Jobs Strategy Pillars
+Building the Foundation: well-planned procurement delivers infrastructure and services on time.
+Improving the Business Environment: open and competitive tenders give capable firms, including small ones, a fair chance.
+Mobilizing Private Capital: open contracting data signals institutional reliability to investors.
+Table 13. Potential questions and analysis on Public Procurement
+• Is procurement data published in a timely, machine-readable form?
+• What share of contracts is awarded through open competition?
+• Is there an independent complaint and review mechanism?
+Data sources: procurement system assessments; electronic procurement records.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+8
+2.1.4. Public Investment Management
+This area covers how public investment projects are appraised, selected, executed and evaluated.
+Table 14. Public Investment Management and the links to the Jobs Strategy Pillars
+Building the Foundation: rigorous appraisal directs investment to its highest-value uses.
+Improving the Business Environment: timely disbursement reduces delays and uncertainty for contractors.
+Mobilizing Private Capital: transparent tracking of project performance signals fiscal discipline.
+Table 15. Potential questions and analysis on Public Investment Management
+• Is there a central body for project appraisal and selection?
+• How much of the development budget is executed, and why is the rest not?
+• How common are cost overruns and contract variations?
+Data sources: public investment management assessments; project management information systems.
+2.2. Public Sector HRM
+This area covers how public employees are recruited, paid and managed, and how that affects the delivery of core government outputs. Meritocratic recruitment has long been associated with better state performance (Evans and Rauch 1999).
+Table 16. Public Sector HRM and the links to the Jobs Strategy Pillars
+Building the Foundation: enough qualified teachers, doctors and officials, recruited on merit, improve service delivery.
+Improving the Business Environment: well-trained officials administer taxes, permits and inspections more efficiently.
+Mobilizing Private Capital: a well-managed wage bill reduces fiscal risk.
+Table 17. Potential questions and analysis on Public Sector HRM
+• Are recruitment criteria merit-based and publicly disclosed?
+• How large is the public sector wage premium compared with the private sector?
+• Does performance management reward good performance?
+Data sources: the dashboard's public administration indicators; bureaucracy indicators; payroll and HR records.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+9
+2.3. Digital and Data
+This area covers the government's information systems, both internal (financial and human resource management systems) and citizen-facing (service portals), and the wider framework for collecting, sharing and protecting data.
+Table 18. Digital and Data and the links to the Jobs Strategy Pillars
+Building the Foundation: interoperable systems improve coordination and service delivery.
+Improving the Business Environment: digital permitting, tax and procurement reduce compliance costs and opportunities for rent-seeking.
+Mobilizing Private Capital: sound financial management systems and cybersecurity reduce risk.
+Table 19. Potential questions and analysis on Digital and Data
+• Does the government have core information systems, and are they interoperable?
+• Is there a national digital strategy coordinated across ministries?
+• Are data protection and cybersecurity frameworks in place and enforced?
+Data sources: the dashboard's digital government indicators; government technology maturity assessments.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+10
+3. Efficiency and Effectiveness beyond Core Government Functions
+This cluster covers public institutions outside the centre of government that shape markets and deliver services. It overlaps with other chapters of the report, so teams should choose the areas most relevant to the country and avoid duplication.
+3.1. Market Regulatory Institutions
+This area covers the rules governing product and financial markets: entry and exit, competition, trade and financial regulation.
+Table 20. Market Regulatory Institutions and the links to the Jobs Strategy Pillars
+Building the Foundation: effective competition policy stops incumbents from blocking new providers.
+Improving the Business Environment: simpler permits and titles reduce the cost of entry.
+Mobilizing Private Capital: protecting investors and simplifying rules for foreign firms encourages investment.
+Table 21. Potential questions and analysis on Market Regulatory Institutions
+• Are regulations and clearance processes predictable and not overly burdensome?
+• Does competition policy challenge entrenched incumbents?
+• Can women and foreign firms start and run businesses on equal terms?
+Data sources: the dashboard's regulatory indicators; business environment surveys.
+3.2. Service Delivery
+This area covers the rules and organizations that deliver education, health, infrastructure and utilities.
+Table 22. Service Delivery and the links to the Jobs Strategy Pillars
+Building the Foundation: access to basic education, health and water builds human capital.
+Improving the Business Environment: low fees and frictions in accessing services reduce costs for firms.
+Mobilizing Private Capital: reliable utilities encourage investment.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+11
+Table 23. Potential questions and analysis on Service Delivery
+• What share of the population has access to basic services, and how equal is access?
+• Do users face informal payments or delays?
+• Are frontline agencies adequately resourced for their mandates?
+Data sources: the dashboard's service delivery indicators; service delivery surveys; household surveys.
+3.3. State-Owned Enterprises Governance
+This area asks whether state-owned enterprises operate on market terms and on an equal footing with private firms. Well-governed enterprises can deliver infrastructure and energy; poorly governed ones can crowd out private firms and create fiscal risk.
+Table 24. State-Owned Enterprises Governance and the links to the Jobs Strategy Pillars
+Building the Foundation: better-performing enterprises improve access to water, electricity and transport.
+Improving the Business Environment: competitive neutrality lets private firms compete on equal terms.
+Mobilizing Private Capital: hard budget constraints reduce hidden fiscal risk.
+Table 25. Potential questions and analysis on State-Owned Enterprises Governance
+• In how many sectors does the state control a firm, and with what market share?
+• Are enterprises financially transparent and independently audited?
+• Are board appointments merit-based and insulated from political interference?
+Data sources: product market regulation indicators; enterprise financial statements.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+12
+4. Context
+Political and social institutions are not areas of direct intervention, but they shape which reforms are feasible. They should be analysed as critical assumptions for the rest of the chapter.
+4.1. Political Institutions
+This area covers the rules that govern how power is distributed and constrained: electoral rules, checks and balances, and relations between the executive and the legislature (North 1990).
+Table 26. Critical Assumption Logic of Political Institutions
+Building the Foundation: effective checks on the executive make capture of public resources less likely.
+Improving the Business Environment: regulatory enforcement free from political interference keeps competition fair.
+Mobilizing Private Capital: broadly distributed political power reduces expropriation risk.
+Table 27. Potential questions and analysis on Political Institutions
+• Are there effective legislative, judicial and audit constraints on the executive?
+• Are elections free and fair, and can opposition, media and civil society operate freely?
+• Do frequent leadership changes disrupt reform implementation?
+Data sources: the dashboard's political institutions indicators; democracy and rule of law datasets.
+4.2. Social Cohesion, Norms and Cooperation
+This area covers trust, norms and cooperation between social groups, which support political stability and voluntary compliance with public rules.
+Table 28. Critical Assumption Logic of Social Cohesion, Norms and Cooperation
+Building the Foundation: trust between citizens and the state raises compliance with taxes and public systems.
+Improving the Business Environment: lower discrimination widens the pool of productive firms and workers.
+Mobilizing Private Capital: cohesive societies sustain reforms over time, reducing uncertainty.
+Table 29. Potential questions and analysis on Social Cohesion, Norms and Cooperation
+• Are there strong divisions or conflict between social groups?
+• Are some groups systematically excluded from power?
+• Is there trust in government to serve the public?
+Data sources: the dashboard's social cohesion indicators; public opinion surveys.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+13
+5. Possible Recommendations
+Table 30. Examples of recommendations by Jobs Strategy pillar
+Strengthen anti-corruption institutions and the judiciary - Mobilizing Private Capital.
+Improve property rights and contract enforcement - Improving the Business Environment; Mobilizing Private Capital.
+Increase transparency, access to information and open data - Building the Foundation; Mobilizing Private Capital.
+Strengthen budget credibility and fiscal risk management - Building the Foundation; Mobilizing Private Capital.
+Make public procurement open and competitive - Improving the Business Environment.
+Professionalize public sector recruitment and management - Building the Foundation.
+Digitize market-facing services such as permits, tax and payments - Improving the Business Environment.
+Strengthen competition policy and the governance of state-owned enterprises - Improving the Business Environment; Mobilizing Private Capital.
+Box 1 Political economy of reform
+Knowing which reforms are needed is not enough: implementation depends on the incentives of the actors who would win or lose from them. Teams should map the main stakeholders, their interests and the informal norms that shape their behaviour, and use that analysis to judge which recommendations are feasible and how to sequence them.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+14
+Glossary of Data Sources
+1.1. Degree of Integrity
+Perception-based corruption indices summarise expert and survey assessments of public sector corruption. Enterprise surveys ask firms directly about bribery requests.
+1.2. Transparency and Accountability
+Open budget assessments score the public availability of budget documents and the strength of legislative and audit oversight.
+1.3. Justice and Rule of Law
+Rule of law indices combine household and expert surveys on constraints on government, civil and criminal justice, and regulatory enforcement.
+2.1.1. Budget Cycle and Fiscal Planning
+Public expenditure and financial accountability assessments rate the reliability, transparency and control of public finances against a common framework.
+2.2. Public Sector HRM
+Bureaucracy indicators report public employment and wages, including the public-private wage gap, from household and labour force surveys.
+2.3. Digital and Data
+Government technology maturity assessments rate core government systems, online service delivery and digital citizen engagement.
+3.1. Market Regulatory Institutions
+Business environment surveys measure the regulatory framework and public services that firms rely on.
+4.1. Political Institutions
+Democracy datasets code electoral rules, executive constraints and civil liberties for most countries over long periods.
+<<<PAGE>>>
+STAND-IN GUIDANCE - synthetic text for testing, not the CGJR guidance note
+15
+References
+Acemoglu, D., Johnson, S., & Robinson, J. A. (2001). The colonial origins of comparative development: An empirical investigation. American Economic Review, 91(5), 1369-1401.
+Besley, T., & Persson, T. (2011). Pillars of Prosperity: The Political Economics of Development Clusters. Princeton University Press.
+Evans, P., & Rauch, J. E. (1999). Bureaucracy and growth: A cross-national analysis of the effects of "Weberian" state structures on economic growth. American Sociological Review, 64(5), 748-765.
+North, D. C. (1990). Institutions, Institutional Change and Economic Performance. Cambridge University Press.
+World Bank (2017). World Development Report 2017: Governance and the Law. World Bank.

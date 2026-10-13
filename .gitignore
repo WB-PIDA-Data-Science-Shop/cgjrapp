@@ -8,3 +8,7 @@
 # Official Use Only material: the CGJR governance guidance note and anything
 # derived from it (e.g. the extracted guidance pack). Never commit.
 inst/docs/
+
+# Local secrets (LLM API keys etc.) and working plans. Never commit.
+.Renviron
+.plans/

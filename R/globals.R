@@ -5,5 +5,7 @@
 # variable" for it.
 
 utils::globalVariables(c(
-  ".data"   # rlang tidy-eval pronoun
+  ".data",      # rlang tidy-eval pronoun
+  "await",      # coro::async() keywords, rewritten by coro at definition
+  "await_each"
 ))
