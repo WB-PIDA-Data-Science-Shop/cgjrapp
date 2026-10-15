@@ -12,3 +12,4 @@ inst/docs/
 # Local secrets (LLM API keys etc.) and working plans. Never commit.
 .Renviron
 .plans/
+copilot_logs/LOG_mai-integration.md
