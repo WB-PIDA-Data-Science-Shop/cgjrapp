@@ -7,11 +7,17 @@
 load_guidance(source = Sys.getenv("CGJR_GUIDANCE_SOURCE", "standin"))
 }
 \arguments{
-\item{source}{\code{"standin"} or \code{"real"}; defaults to the env var.}
+\item{source}{\code{"standin"} or \code{"real"}; defaults to the env var.
+The passages' saved embeddings (for the chat's retrieval) are attached when
+their file exists next to them and still matches the passages:
+\code{inst/guidance_standin/guidance_standin_embeddings.rds}, or
+\verb{<passages file>_embeddings.rds} for the real note. When they no longer
+match, a message says so and retrieval uses keywords only.}
 }
 \value{
 A list: \code{source}, \code{label} (for prompts and the UI), \code{passages},
-\code{refs} (see \code{\link[=split_guidance]{split_guidance()}}).
+\code{refs} (see \code{\link[=split_guidance]{split_guidance()}}) and \code{embeddings} (\code{NULL}, or a list with
+\code{model}, \code{fingerprint} and \code{vectors}).
 }
 \description{
 \code{CGJR_GUIDANCE_SOURCE} picks it: \code{"standin"} (default) is the synthetic

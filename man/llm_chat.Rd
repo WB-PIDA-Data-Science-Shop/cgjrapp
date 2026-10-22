@@ -13,7 +13,12 @@ llm_chat(system_prompt = NULL)
 An \code{ellmer::Chat}.
 }
 \description{
-Create a chat object for the configured LLM provider
+The provider comes from environment variables (see the top of
+\code{R/utils_llm.R}). Under WBG mAI the chat calls the v2 deployment route of
+\code{CGJR_MAI_ENV} (DEV, QA or PROD) with a cached desktop token, an
+8,000-token output cap and, for gpt-5 / o-series models, a low reasoning
+effort. Creating it already fetches the token, so sign-in problems surface
+here.
 }
 \seealso{
 \code{\link[=check_llm_available]{check_llm_available()}}

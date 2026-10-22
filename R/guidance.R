@@ -217,8 +217,15 @@ split_guidance <- function(pages, drop = .GUIDANCE_DROP) {
 #' `data-raw/guidance_passages.R`, never committed).
 #'
 #' @param source `"standin"` or `"real"`; defaults to the env var.
+#' The passages' saved embeddings (for the chat's retrieval) are attached when
+#' their file exists next to them and still matches the passages:
+#' `inst/guidance_standin/guidance_standin_embeddings.rds`, or
+#' `<passages file>_embeddings.rds` for the real note. When they no longer
+#' match, a message says so and retrieval uses keywords only.
+#'
 #' @return A list: `source`, `label` (for prompts and the UI), `passages`,
-#'   `refs` (see [split_guidance()]).
+#'   `refs` (see [split_guidance()]) and `embeddings` (`NULL`, or a list with
+#'   `model`, `fingerprint` and `vectors`).
 #' @export
 load_guidance <- function(source = Sys.getenv("CGJR_GUIDANCE_SOURCE", "standin")) {
   source <- match.arg(source, c("standin", "real"))
@@ -227,6 +234,7 @@ load_guidance <- function(source = Sys.getenv("CGJR_GUIDANCE_SOURCE", "standin")
     txt <- paste(readLines(path, encoding = "UTF-8", warn = FALSE), collapse = "\n")
     g <- split_guidance(strsplit(txt, "\n<<<PAGE>>>\n", fixed = TRUE)[[1]])
     g$label <- "STAND-IN guidance (synthetic text for testing, not the CGJR guidance note)"
+    emb <- file.path(dirname(path), "guidance_standin_embeddings.rds")
   } else {
     path <- Sys.getenv("CGJR_GUIDANCE_PATH", "")
     if (!nzchar(path)) path <- system.file("docs", "guidance_passages.rds", package = "cgjrapp")
@@ -237,7 +245,9 @@ load_guidance <- function(source = Sys.getenv("CGJR_GUIDANCE_SOURCE", "standin")
     }
     g <- readRDS(path)
     g$label <- "CGJR Guidance Note for the Chapter on Governance and Public Institutions"
+    emb <- sub("\\.rds$", "_embeddings.rds", path)
   }
+  g$embeddings <- .read_embeddings(emb, g$passages)
   g$source <- source
   g
 }
@@ -256,6 +266,12 @@ load_guidance <- function(source = Sys.getenv("CGJR_GUIDANCE_SOURCE", "standin")
       (children & Reduce(`|`, lapply(codes, function(cd) startsWith(gl, paste0(cd, "."))), FALSE))))
   }
   guidance$passages[hit, , drop = FALSE]
+}
+
+# The guidance's table of contents: one "- <section> <title>" line per section.
+.guidance_contents <- function(passages) {
+  s <- unique(passages[c("section", "title")])
+  paste(sprintf("- %s %s", s$section, s$title), collapse = "\n")
 }
 
 # The prompt block for a set of passages.

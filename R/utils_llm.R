@@ -4,15 +4,18 @@
 # (local development; never a committed file) or the Posit Connect
 # environment panel (production):
 #
+#   CGJR_LLM_PROVIDER  - "mai" for WBG mAI (utils_mai.R); unset for any
+#                        OpenAI-compatible endpoint, configured with:
 #   CGJR_LLM_BASE_URL  - OpenAI-compatible API base URL
 #                        (default: http://localhost:11434/v1, local Ollama)
-#   CGJR_LLM_MODEL     - model name (default: llama3.2)
+#   CGJR_LLM_MODEL     - model name (default: llama3.2; gpt-4.1-mini on mAI)
 #   CGJR_LLM_API_KEY   - API key (default: ollama)
 #
 # Groq is routed to ellmer::chat_groq() (it rejects OpenAI-only fields);
-# everything else - Ollama, Google Gemini's OpenAI-compatible endpoint, WBG
-# mAI - uses ellmer::chat_openai_compatible(). Switching provider is an
-# env-var change only.
+# Ollama and Google Gemini's OpenAI-compatible endpoint use
+# ellmer::chat_openai_compatible(); mAI uses ellmer::chat_azure_openai() with
+# a desktop token (CGJR_MAI_* variables, see utils_mai.R). Switching provider
+# is an env-var change only.
 #
 # Which guidance the prompts carry is a separate switch,
 # CGJR_GUIDANCE_SOURCE (guidance.R): the Official Use Only note only with an
@@ -26,13 +29,23 @@
   )
 }
 
+.llm_provider <- function() tolower(Sys.getenv("CGJR_LLM_PROVIDER", ""))
+
 #' Create a chat object for the configured LLM provider
+#'
+#' The provider comes from environment variables (see the top of
+#' `R/utils_llm.R`). Under WBG mAI the chat calls the v2 deployment route of
+#' `CGJR_MAI_ENV` (DEV, QA or PROD) with a cached desktop token, an
+#' 8,000-token output cap and, for gpt-5 / o-series models, a low reasoning
+#' effort. Creating it already fetches the token, so sign-in problems surface
+#' here.
 #'
 #' @param system_prompt Character scalar or `NULL`.
 #' @return An `ellmer::Chat`.
 #' @seealso [check_llm_available()]
 #' @export
 llm_chat <- function(system_prompt = NULL) {
+  if (.llm_provider() == "mai") return(.mai_chat(system_prompt))
   cfg <- .llm_config()
   if (grepl("groq\\.com", cfg$base_url, ignore.case = TRUE)) {
     ellmer::chat_groq(system_prompt = system_prompt, model = cfg$model,
@@ -49,11 +62,15 @@ llm_chat <- function(system_prompt = NULL) {
 #' A 5-second `GET {base_url}/models` with the API key. 401/403, or a 400
 #' that complains about the API key (Gemini), mean the key was rejected; any
 #' other HTTP response counts as reachable (some servers don't implement
-#' `/models`).
+#' `/models`). Under WBG mAI (`CGJR_LLM_PROVIDER = "mai"`) it instead gets a
+#' desktop token and asks the gateway's health endpoint: no token, 401 or 403
+#' is `"auth"` (the reason is logged).
 #'
-#' @return `"ok"`, `"auth"` (the key was rejected) or `"unreachable"`.
+#' @return `"ok"`, `"auth"` (the key or sign-in was rejected) or
+#'   `"unreachable"`.
 #' @export
 check_llm_available <- function() {
+  if (.llm_provider() == "mai") return(.mai_check())
   cfg <- .llm_config()
   resp <- tryCatch(
     httr2::request(paste0(cfg$base_url, "/models")) |>
@@ -73,6 +90,7 @@ check_llm_available <- function() {
 
 # A short, plain message for an LLM failure; the real condition is logged.
 .llm_problem_message <- function(status) {
+  if (.llm_provider() == "mai") return(.mai_problem_message(status))
   switch(status,
     unreachable = paste("Cannot reach the AI service. Check your connection and",
                         "CGJR_LLM_BASE_URL in your .Renviron."),
@@ -154,17 +172,26 @@ llm_error_message <- function(cnd) {
   (.is_rate_limit(cnd) && !.is_quota_exhausted(cnd)) || .is_overloaded(cnd)
 }
 
-# Seconds to wait before retry n (1, 2, 3).
-.RETRY_DELAYS <- c(5, 15, 30)
+# Seconds to wait before retry n (1-4). The 60 s wait outlasts a per-minute
+# token limit (mAI DEV: 25k tokens a minute for most models).
+.RETRY_DELAYS <- c(5, 15, 30, 60)
 
 # Stream a prompt, retrying transient errors with backoff. `make_chat()` gives
 # the chat to use for each attempt; `on_retry(n, delay, cnd)` is told before
-# each wait. A promise for the full text.
+# each wait. A mAI 401 gets one immediate retry with a fresh token. A promise
+# for the full text.
 .stream_retry <- function(make_chat, prompt, on_chunk = NULL, on_retry = NULL,
                           delays = .RETRY_DELAYS) {
+  refreshed <- FALSE
   attempt <- function(n) {
     p <- .stream_text(make_chat(), prompt, on_chunk)
     promises::catch(p, function(e) {
+      if (!refreshed && .is_mai_token_rejected(e)) {
+        refreshed <<- TRUE
+        message("[cgjrapp] mAI rejected the token; fetching a new one and retrying")
+        .mai_clear_token()
+        return(attempt(n))
+      }
       if (n > length(delays) || !.is_transient(e)) stop(e)
       message("[cgjrapp] transient LLM error, retry ", n, " in ", delays[[n]], "s: ",
               strsplit(.plain_message(e), "\n", fixed = TRUE)[[1]][[1]])

@@ -122,7 +122,7 @@ test_that("server: Resume finishes a failed run without rewriting completed part
   })
 })
 
-test_that("server: a chat turn gets the guidance and the selection's evidence", {
+test_that("server: a chat turn gets the guidance passages for the question and the selection's evidence", {
   httr2::local_mocked_responses(function(req) httr2::response(200))
   f <- fake_chat_factory(list(c("The guidance says integrity ", "matters [G1.1-1].")))
   shiny::testServer(mod_report_server, args = report_args(factory = f), {
@@ -130,11 +130,67 @@ test_that("server: a chat turn gets the guidance and the selection's evidence", 
     session$setInputs(chat_user_input = list(text = "Why does integrity matter?", attachments = list()))
     pump(session, function() !chat_state$busy && attr(f, "calls")() == 1L)
     expect_identical(attr(f, "calls")(), 1L)
+    user <- attr(f, "prompts")()[[1]]$user
+    expect_match(user, "[G1.1-1]", fixed = TRUE)
+    expect_match(user, "Why does integrity matter?", fixed = TRUE)
     sys <- attr(f, "prompts")()[[1]]$system
-    expect_match(sys, "[G1.1-1]", fixed = TRUE)
     expect_match(sys, "Beyond the guidance (general knowledge, not verified)", fixed = TRUE)
     expect_match(sys, "SELECTION: Ghana compared with 5 countries")
     expect_false(chat_state$busy)
+  })
+})
+
+test_that("server: after a chat answer, the history keeps the question but not its passages", {
+  httr2::local_mocked_responses(function(req) httr2::response(200))
+  f <- fake_chat_factory(list("Integrity matters [G1.1-1]."))
+  shiny::testServer(mod_report_server, args = report_args(factory = f), {
+    session$setInputs(chat_user_input = "Why does integrity matter?")
+    pump(session, function() !chat_state$busy && attr(f, "calls")() == 1L)
+    turns <- chat_state$chat$get_turns()
+    expect_length(turns, 2L)
+    expect_identical(ellmer::contents_text(turns[[1]]), "Why does integrity matter?")
+    expect_identical(ellmer::contents_text(turns[[2]]), "Integrity matters [G1.1-1].")
+  })
+})
+
+test_that("server: a follow-up question still gets the passages of the topic before it", {
+  httr2::local_mocked_responses(function(req) httr2::response(200))
+  f <- fake_chat_factory(list("Integrity matters [G1.1-1]."))
+  shiny::testServer(mod_report_server, args = report_args(factory = f), {
+    session$setInputs(chat_user_input = "Why does integrity matter?")
+    pump(session, function() !chat_state$busy && attr(f, "calls")() == 1L)
+    session$setInputs(chat_user_input = "Tell me more about that.")
+    pump(session, function() !chat_state$busy && attr(f, "calls")() == 2L)
+    expect_match(attr(f, "prompts")()[[2]]$user, "[G1.1-1]", fixed = TRUE)
+  })
+})
+
+test_that("server (mAI): the question is embedded, and a failed embedding falls back to keywords", {
+  local_mai()
+  g <- mini_guidance()
+  g$embeddings <- list(vectors = rbind(`G1.1-1` = c(1, 0), `G2.2-1` = c(0, 1),
+                                       `G2.1.3-1` = c(0.7, 0.7), `G2.3-1` = c(-1, 0)))
+  embed_ok <- TRUE
+  httr2::local_mocked_responses(function(req) {
+    if (!grepl("/embeddings", req$url)) return(httr2::response(200))   # health check
+    if (!embed_ok) return(httr2::response(500))
+    httr2::response_json(body = list(data = list(list(index = 0L, embedding = list(1, 0.05)))))
+  })
+  f <- fake_chat_factory(list("Tenders [G2.1.3-1]."))
+  args <- report_args(factory = f)
+  args$guidance <- g
+  shiny::testServer(mod_report_server, args = args, {
+    session$setInputs(chat_user_input = "tenders")
+    pump(session, function() !chat_state$busy && attr(f, "calls")() == 1L)
+    # G1.1-1 shares no word with "tenders": only the embedding finds it
+    expect_match(attr(f, "prompts")()[[1]]$user, "[G1.1-1]", fixed = TRUE)
+
+    embed_ok <<- FALSE
+    expect_message({
+      session$setInputs(chat_user_input = "tenders again")
+      pump(session, function() !chat_state$busy && attr(f, "calls")() == 2L)
+    }, "embedding.*keyword")
+    expect_match(attr(f, "prompts")()[[2]]$user, "[G2.1.3-1]", fixed = TRUE)
   })
 })
 

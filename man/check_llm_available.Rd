@@ -7,11 +7,14 @@
 check_llm_available()
 }
 \value{
-\code{"ok"}, \code{"auth"} (the key was rejected) or \code{"unreachable"}.
+\code{"ok"}, \code{"auth"} (the key or sign-in was rejected) or
+\code{"unreachable"}.
 }
 \description{
 A 5-second \verb{GET \{base_url\}/models} with the API key. 401/403, or a 400
 that complains about the API key (Gemini), mean the key was rejected; any
 other HTTP response counts as reachable (some servers don't implement
-\verb{/models}).
+\verb{/models}). Under WBG mAI (\code{CGJR_LLM_PROVIDER = "mai"}) it instead gets a
+desktop token and asks the gateway's health endpoint: no token, 401 or 403
+is \code{"auth"} (the reason is logged).
 }

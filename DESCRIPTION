@@ -28,6 +28,7 @@ Imports:
     ggplot2,
     htmltools,
     httr2,
+    jsonlite,
     later,
     officer,
     plotly,
