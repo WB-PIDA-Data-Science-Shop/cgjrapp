@@ -2822,6 +2822,16 @@
       "Maintainer": "Yihui Xie <xie@yihui.name>",
       "Repository": "RSPM"
     },
+    "mirai": {
+      "Package": "mirai",
+      "Version": "2.7.4",
+      "Source": "Repository"
+    },
+    "nanonext": {
+      "Package": "nanonext",
+      "Version": "1.10.4",
+      "Source": "Repository"
+    },
     "officer": {
       "Package": "officer",
       "Version": "0.7.6",

@@ -68,7 +68,44 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
 
 # -- Prompt pieces ---
 
-.report_system_prompt <- function(meta, guidance) {
+# Rule 8 of the system prompt: how a published CGJR writes - the spec, with
+# the reports it was drawn from and the evidence for each rule, is
+# docs/writing-style.md. Keep the two in step.
+.STYLE_RULES <- paste0(
+  "8. Write as a published CGJR does, for World Bank country teams:\n",
+  "- Open each paragraph with one bold sentence stating its main point, then 2-4 sentences ",
+  "of evidence, e.g. '**Recruitment is the weakest area of public sector HRM [E3].** Its CTF ",
+  "of 0.306 ranks 16 of 22, below the comparators' median of 0.447 [E3].' Every sentence that ",
+  "states a figure cites it in that sentence, even when the bold sentence cites the same ",
+  "fact. Headings and bullet points take no bold.\n",
+  "- Set each figure against the comparison group (its band, its rank, the comparators' ",
+  "median) rather than stating it alone.\n",
+  "- Be balanced: where the evidence shows a strength as well as a weakness, state the ",
+  "strength first, then the weakness ('However, ...').\n",
+  "- Keep sentences to about 25 words, rarely over 35; plain words; the active voice.\n",
+  "- Spell out an abbreviation the first time, with it in parentheses: 'public financial ",
+  "management (PFM)'. Write 'percent', not '%'; 'the government' in lower case; never ",
+  "'we' or 'our'.\n",
+  "- State what a reform could do, never what it will do: a reform 'could' or 'can' ",
+  "improve an outcome.\n",
+  "- Begin each recommendation with a verb ('Strengthen ...', 'Publish ...') and keep it ",
+  "as specific as its GUIDANCE passage; give no timeframe the passage does not give.\n",
+  "- A neutral, analytical register: no preamble, no closing remarks, no disclaimers, no ",
+  "top-level headings.\n")
+
+.report_system_prompt <- function(meta, guidance, research = FALSE) {
+  research_source <- if (research) paste0(
+    "- RESEARCH findings, cited as [S...] - findings from published research, each checked ",
+    "against its source's text, with its claim type and whose experience it describes.\n")
+  research_rules <- if (research) paste0(
+    "\n10. Every statement drawn from published research must cite its RESEARCH finding, e.g. ",
+    "[S3.2]. Name a study or its authors only as a RESEARCH finding gives them.\n",
+    "11. Keep each finding's claim type: state a descriptive finding as an observation or ",
+    "an association, never as a cause; use causal language only for a finding marked causal.\n",
+    "12. Keep each finding's scope: a finding from another country or from several countries ",
+    "is evidence from elsewhere - say so, and never present it as a fact about ", meta$base_name, ".\n",
+    "13. Copy a finding's figures exactly as it states them. Dashboard figures [E] and ",
+    "research figures [S] are different evidence: never present one as the other.")
   paste0(
     "You are drafting the Governance and Public Institutions chapter of a World Bank ",
     "Country Growth and Jobs Report (CGJR) for ", meta$base_name, ". Follow the CGJR ",
@@ -80,7 +117,7 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
     "You receive two kinds of sources, every item with an id:\n",
     "- GUIDANCE passages, cited as [G...] - excerpts of the guidance note.\n",
     "- EVIDENCE facts, cited as [E...] - figures computed by the GOVCGJR dashboard ",
-    "for this selection.\n\n",
+    "for this selection.\n", research_source, "\n",
 
     "Rules:\n",
     "1. Every figure you state must be copied exactly as written in an EVIDENCE fact and ",
@@ -89,7 +126,8 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
     "2. Every statement about why an area matters, how it links to growth and jobs, ",
     "which questions to ask, which data sources to use, or which reforms to consider ",
     "must come from a GUIDANCE passage and cite it, e.g. [G1.2-1].\n",
-    "3. Cite only ids listed below. Combine ids in one bracket when needed: [E3, G1.2-1].\n",
+    "3. Cite only ids listed below. Combine ids in one bracket when needed: [E3, G1.2-1]. ",
+    "List every id: never a range such as [E3-E6].\n",
     "4. Do not name any study, author, dataset, tool or institution that does not appear ",
     "in the passages given. Do not add facts about the country from your own knowledge.\n",
     "5. Areas listed as NOT YET MEASURED have no indicators: say so; never describe them ",
@@ -101,10 +139,10 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
     "7. The dashboard's taxonomy (it differs slightly from CLIAR: Justice and Rule of Law ",
     "uses 16 of CLIAR's 17 legal indicators; Political Institutions and Social Cohesion ",
     "merges two CLIAR families):\n", .taxonomy_outline(), "\n",
-    "8. Write in a neutral, analytical register for World Bank country teams. No ",
-    "preamble, no closing remarks, no disclaimers, no top-level headings.\n",
+    .STYLE_RULES,
     "9. For each section listed under OUTPUT, write its marker line exactly as given, on ",
-    "its own line, then the section's text. Write nothing outside these sections."
+    "its own line, then the section's text. Write nothing outside these sections.",
+    research_rules
   )
 }
 
@@ -176,9 +214,12 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
   u[u$cluster %in% ev$meta$clusters, ]
 }
 
-.call <- function(id, label, keys, templates, guidance_rows, evidence_text, ev, guidance) {
+.call <- function(id, label, keys, templates, guidance_rows, evidence_text, ev, guidance,
+                  research = FALSE) {
   titles <- .section_titles(ev)
-  out <- paste(sprintf("[[section:%s]]  (%s) %s", keys, titles[keys], templates), collapse = "\n")
+  name <- ifelse(startsWith(keys, "questions_"),
+                 paste("Questions:", titles[sub("^questions_", "", keys)]), titles[keys])
+  out <- paste(sprintf("[[section:%s]]  (%s) %s", keys, name, templates), collapse = "\n")
   user <- paste0(
     .selection_block(ev$meta), "\n\n",
     "OUTPUT - write these sections, in this order, each opened by its marker line ",
@@ -186,7 +227,69 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
     "GUIDANCE PASSAGES:\n", .guidance_block(guidance_rows), "\n\n",
     evidence_text)
   list(id = id, label = label, keys = keys,
-       prompt = list(system = .report_system_prompt(ev$meta, guidance), user = user))
+       prompt = list(system = .report_system_prompt(ev$meta, guidance, research), user = user))
+}
+
+# Where research belongs in a section that has findings: the country's own
+# findings add context to what the data show, findings from elsewhere explain
+# why the area matters - each kept apart from the dashboard's figures.
+.LEAF_RESEARCH <- paste(
+  "Where RESEARCH findings bear on this section, use them: findings about the country add",
+  "context to (a), kept apart from the dashboard's figures; findings from elsewhere explain",
+  "mechanisms in (b), said to come from elsewhere [S]. Use only findings that strengthen the text.")
+
+# The narrative format, as a published CGJR reads: prose whose depth follows
+# the area's priority (the guidance: "only a few" clusters will matter most),
+# recommendations inside the section (the guidance: "each section of the
+# chapter should ... derive recommendations relevant to its area"), and the
+# guidance's diagnostic questions gathered in an annex.
+.NARRATIVE_FULL <- paste(
+  "A PRIORITY AREA: about 350-450 words in 3-5 paragraphs, each opening with a bold",
+  "sentence (rule 8), no subheadings. Cover, in the",
+  "order the evidence suggests: where the country stands - the strongest and weakest",
+  "indicators, their band, rank, the comparators' median and change over time [E]; why the",
+  "area matters for growth and jobs, through the jobs-strategy pillars and the literature",
+  "the guidance gives [G]; and 1-2 recommendations for this area from the guidance's",
+  "possible recommendations [G], worded for the country, each with the evidence that",
+  "motivates it [E].")
+.NARRATIVE_SHORT <- paste(
+  "Not a priority area: one paragraph of 80-120 words, opening with a bold sentence, on",
+  "where the country stands [E] and",
+  "why the area matters for growth and jobs [G]. No recommendations.")
+.NARRATIVE_GAP <- paste(
+  "This area is NOT YET MEASURED: one paragraph of 2-3 sentences - the dashboard has no",
+  "indicators for it yet, and why the area matters for growth and jobs [G]. Never describe",
+  "it as weak or strong.")
+.NARRATIVE_QUESTIONS <- paste(
+  "The area's questions for further analysis: 2-4 bullet points ('- ') with the guidance's",
+  "diagnostic questions that the dashboard data cannot answer, each with the data sources",
+  "or tools the guidance suggests [G]. No other text.")
+# Research's jobs in the narrative format (with the section's findings only).
+.NARRATIVE_RESEARCH <- paste(
+  "Where RESEARCH findings bear on this area, give them a job: findings about the country",
+  "add context the indicators cannot show - say how old the evidence is; findings from",
+  "elsewhere explain mechanisms or what reforms achieved, said to come from elsewhere [S].",
+  "A recommendation not among the guidance's possible recommendations is allowed only when",
+  "a RESEARCH finding supports it: cite the finding and say the recommendation comes from",
+  "research. Use only findings that strengthen the text.")
+.NARRATIVE_QUESTIONS_RESEARCH <- paste(
+  "Where a RESEARCH finding bears on a question, sharpen the question with it [S].")
+
+# One section's instructions in the narrative format.
+.narrative_template <- function(ev, leaf_key, priority, research) {
+  body <- if (leaf_key %in% ev$gaps$leaf) .NARRATIVE_GAP
+          else if (priority) .NARRATIVE_FULL else .NARRATIVE_SHORT
+  paste(c(body, if (research) .NARRATIVE_RESEARCH), collapse = " ")
+}
+
+# The sections a narrative report treats in depth: the scope's top `n`
+# measured areas in the dashboard's priority order; a one-section report's
+# own section.
+.priority_leaves <- function(ev, leaves, sc, n = 3L) {
+  if (sc$type == "leaf") return(sc$key)
+  titles <- .section_titles(ev)
+  keys <- names(titles)[match(priority_areas(ev)$name, titles)]
+  utils::head(keys[keys %in% leaves], n)
 }
 
 #' Plan the LLM calls for an AI Report
@@ -196,15 +299,33 @@ report_scope_choices <- function(taxonomy = cgjrdata::cgjr_taxonomy) {
 #' @param guidance Output of [load_guidance()].
 #' @param scope `"chapter"`, `"cluster:<key>"` or `"leaf:<key>"` (see
 #'   [report_scope_choices()]).
-#' @return A list: `scope`, `sections` (data frame `key`, `title`, in display
-#'   order) and `calls` (list of `list(id, label, keys, prompt = list(system,
-#'   user))`).
+#' @param research `NULL` (no research: the plan is the dashboard-and-guidance
+#'   draft), or a research pack: a list whose `findings` data frame has `id`
+#'   (e.g. `"S3.2"`), `leaf` and `line` (the finding as the writer sees it).
+#'   Each section's call then carries its own findings, and the rules for
+#'   citing them.
+#' @param format `"structured"` (each section under three fixed subheadings:
+#'   what the data show, why it matters, questions for the country team) or
+#'   `"narrative"` (prose as a published CGJR reads: the scope's top three
+#'   priority areas in depth with their own recommendations, other areas in a
+#'   paragraph, a closing synthesis by pillar, and each section's questions
+#'   under its own `questions_<leaf>` marker, for an annex).
+#' @param focus Optional text from the team on what to emphasise; it reaches
+#'   every call as an instruction, never as a source. `NULL` or blank: none.
+#' @return A list: `scope`, `format`, `focus`, `sections` (data frame `key`,
+#'   `title`, in display order; in the narrative format the `questions_`
+#'   sections last) and `calls` (list of `list(id, label, keys, prompt =
+#'   list(system, user))`).
 #' @export
-plan_ai_report <- function(evidence, guidance, scope = "chapter") {
+plan_ai_report <- function(evidence, guidance, scope = "chapter", research = NULL,
+                           format = c("structured", "narrative"), focus = NULL) {
+  format <- match.arg(format)
+  narrative <- format == "narrative"
   ev <- evidence; sc <- .parse_scope(scope)
   f <- ev$facts
   leaves <- .scope_leaves(ev)
   if (sc$type == "leaf") leaves <- leaves[leaves$leaf == sc$key, ]
+  priority <- if (narrative) .priority_leaves(ev, leaves$leaf, sc)
   calls <- list()
 
   if (sc$type == "chapter") {
@@ -237,15 +358,32 @@ plan_ai_report <- function(evidence, guidance, scope = "chapter") {
       "NOT YET MEASURED:\n", .gaps_block(ev, cl), "\n\n",
       "EXCLUDED INDICATORS (no data for the base country, or no variation in the group):\n",
       .excluded_block(ev, cl))
-    keys <- if (sc$type == "leaf") lv else c(cl, lv)
-    templates <- c(
-      if (sc$type != "leaf") paste("2-4 sentences introducing the cluster as the guidance",
-                                   "frames it [G] and summarising its subcluster averages [E]."),
-      vapply(lv, function(k) .leaf_template(ev, k), character(1)))
+    # the research findings of this call's sections only
+    r <- research$findings[research$findings$leaf %in% lv, ]
+    if (NROW(r)) ev_text <- paste0(ev_text, "\n\nRESEARCH FINDINGS:\n", paste(r$line, collapse = "\n"))
+    intro <- if (sc$type != "leaf") paste("2-4 sentences introducing the cluster as the guidance",
+                                          "frames it [G] and summarising its subcluster averages [E].")
+    if (narrative) {
+      keys <- c(if (sc$type != "leaf") cl, lv, paste0("questions_", lv))
+      templates <- c(
+        intro,
+        vapply(lv, function(k) .narrative_template(ev, k, k %in% priority, k %in% r$leaf), ""),
+        vapply(lv, function(k) paste(c(.NARRATIVE_QUESTIONS, if (k %in% r$leaf) .NARRATIVE_QUESTIONS_RESEARCH),
+                                     collapse = " "), ""))
+    } else {
+      keys <- if (sc$type == "leaf") lv else c(cl, lv)
+      templates <- c(
+        intro,
+        vapply(lv, function(k) paste(c(.leaf_template(ev, k), if (k %in% r$leaf) .LEAF_RESEARCH),
+                                     collapse = " "), character(1)))
+    }
     g_keys <- if (sc$type == "leaf") lv else c(cl, lv, if (cl == "core_governance_functions") "public_financial_management")
+    g_rows <- .guidance_for(guidance, g_keys)
+    # a priority area makes its own recommendations: the call needs the guidance's list
+    if (any(lv %in% priority)) g_rows <- rbind(g_rows, .guidance_for(guidance, "recommendations", glossary = FALSE))
     calls[[length(calls) + 1L]] <- .call(
-      cl, ev$meta$cluster_names[[cl]], keys, templates,
-      .guidance_for(guidance, g_keys), ev_text, ev, guidance)
+      cl, ev$meta$cluster_names[[cl]], keys, templates, g_rows, ev_text, ev, guidance,
+      research = NROW(r) > 0L)
   }
 
   rec_clusters <- unique(leaves$cluster)
@@ -254,24 +392,46 @@ plan_ai_report <- function(evidence, guidance, scope = "chapter") {
     if (sc$type == "leaf") paste0("EVIDENCE - this section:\n",
                                   .facts_lines(f[f$leaf %in% leaves$leaf & f$view == "static", ]), "\n\n"),
     "NOT YET MEASURED:\n", .gaps_block(ev, rec_clusters))
-  calls[[length(calls) + 1L]] <- .call(
-    "recommendations", "Possible recommendations", "recommendations",
+  rec_template <- if (narrative) {
+    paste("The chapter's synthesis of recommendations: 3-6 bullet points ('- '), the areas of",
+          "the PRIORITY ORDER first [E]", if (sc$type != "chapter") "- only areas within this scope",
+          "- each with the recommendation(s) the guidance offers for",
+          "it [G], worded for the country, and the jobs-strategy pillar(s) it contributes to [G].",
+          "Close with 2-3 sentences on sequencing - which reforms come first, and why - and the",
+          "political economy of carrying them out [G].")
+  } else {
     paste("3-6 bullet points ('- '). Use ONLY recommendations from the guidance's list of",
           "possible recommendations [G], choosing those that address the weakest areas in",
           "the PRIORITY ORDER [E]", if (sc$type != "chapter") "within this scope", ". For each,",
           "give the recommendation as the guidance words it, the pillar(s) it contributes to",
           "[G], and the evidence that motivates it [E]. Close with 1-2 sentences on political",
-          "economy considerations for feasibility and sequencing [G]."),
+          "economy considerations for feasibility and sequencing [G].")
+  }
+  calls[[length(calls) + 1L]] <- .call(
+    "recommendations", "Possible recommendations", "recommendations", rec_template,
     rbind(.guidance_for(guidance, "recommendations", glossary = FALSE),
           .guidance_for(guidance, "overview", glossary = FALSE)[
             .guidance_for(guidance, "overview", glossary = FALSE)$section == "THE", ]),
     rec_ev, ev, guidance)
 
+  # the team's focus, in every call: an instruction, never a source
+  focus <- trimws(focus %||% "")
+  if (nzchar(focus)) calls <- lapply(calls, function(call) {
+    call$prompt$user <- paste0(call$prompt$user, "\n\nFOCUS FOR THIS DRAFT - an instruction from ",
+      "the country team, not a source: follow it in what you emphasise, but anything it ",
+      "mentions still needs cited evidence.\n", focus)
+    call
+  })
+
   keys <- unlist(lapply(calls, `[[`, "keys"))
-  # display order: overview / prioritization first, recommendations last
+  # display order: overview / prioritization first, recommendations, then the
+  # questions annex (each named after its section)
+  q <- startsWith(keys, "questions_")
+  keys <- c(keys[!q], keys[q])
   titles <- .section_titles(ev)
-  list(scope = scope, calls = calls,
-       sections = data.frame(key = keys, title = unname(titles[keys]), stringsAsFactors = FALSE))
+  list(scope = scope, format = format, focus = if (nzchar(focus)) focus, calls = calls,
+       sections = data.frame(key = keys, title = unname(titles[sub("^questions_", "", keys)]),
+                             stringsAsFactors = FALSE))
 }
 
 #' Split an AI Report into its sections

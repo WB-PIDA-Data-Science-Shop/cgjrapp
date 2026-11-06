@@ -1,24 +1,37 @@
 # ---
 # Deterministic checks on LLM text (AI Report and AI Chat).
 #
-# The model is told to cite dashboard facts as [E12] and guidance passages as
-# [G1.2-3]. These checks back the "verified" claim - they are R code, not the
-# model grading itself:
+# The model is told to cite dashboard facts as [E12], guidance passages as
+# [G1.2-3] and research findings as [S3.2]. These checks back the "verified"
+# claim - they are R code, not the model grading itself:
 #   * every cited id exists;
 #   * every figure in a sentence is supported by what that sentence cites -
 #     numerically for evidence facts (CTF, comparator median, change: to
-#     +/-0.0005; "X of N" ranks exactly), or verbatim in a cited fact or
-#     passage;
+#     +/-0.0005; "X of N" ranks exactly), or verbatim in a cited fact,
+#     passage, or research finding or its quote;
 #   * a sentence with figures but no citation is flagged;
-#   * an author-year reference not in the guidance's reference list is
-#     flagged (the model may only name papers the guidance cites);
+#   * causal wording resting only on research findings that are not causal
+#     is flagged, and so is a sentence naming the country that rests only
+#     on findings from elsewhere;
+#   * an author-year reference that is neither in the guidance's reference
+#     list nor among the research given is flagged;
 #   * expected report sections that never appear are flagged.
+# What these checks cannot establish is that a sentence fairly states what
+# its sources say; that is left to the reader, with each source at hand.
 # Text under a "Beyond the guidance" heading (chat) is labelled unverified
 # for the reader, so its figures are not flagged as uncited.
 # ---
 
-.ID_RE <- "E\\d+|G[A-Z]{0,3}[0-9.]*-\\d+"
-.CITE_RE <- "\\[([^][]*?\\b(?:E\\d+|G[A-Z]{0,3}[0-9.]*-\\d+)\\b[^][]*?)\\]"
+.ID_RE <- "E\\d+|G[A-Z]{0,3}[0-9.]*-\\d+|S\\d+\\.\\d+"
+.CITE_RE <- "\\[([^][]*?\\b(?:E\\d+|G[A-Z]{0,3}[0-9.]*-\\d+|S\\d+\\.\\d+)\\b[^][]*?)\\]"
+# Wording that states a cause - fine for a finding the research marks
+# causal, not for a descriptive one. "Increase", "reduce", "raise", "lower"
+# count as verbs only ("practices increase corruption"), not as nouns ("an
+# increase in pay") or in the past tense, which mostly reports a trend.
+.CAUSAL_RE <- paste0(
+  "(?i)\\b(caus(e|es|ed|ing)|led to|leads? to|leading to|result(s|ed|ing)? in|drives?|drove|",
+  "because of|contribut(e|es|ed|ing) to)\\b|",
+  "(?<!\\ban )(?<!\\ba )(?<!\\bthe )\\b(increase|reduce|raise|lower)s?\\b(?!\\s+in\\b)")
 .MARKER_RE <- "^\\s*[`*_]*\\[\\[\\s*section\\s*:\\s*([A-Za-z0-9_]+)\\s*\\]\\][`*_]*\\s*$"
 .BEYOND_RE <- "(?i)beyond the guidance"
 
@@ -38,7 +51,8 @@
     if (grepl(.BEYOND_RE, ln, perl = TRUE)) beyond <- TRUE
     t <- trimws(gsub("^\\s*(#+|[-*+\u2022]|\\d+\\.)\\s+", "", ln))
     if (!nzchar(t)) next
-    s <- strsplit(t, "(?<=[.!?])\\s+(?=[A-Z\\[(\"\u201c*])", perl = TRUE)[[1]]
+    # a sentence ends at . ! or ?, or just after the ** closing a bold one
+    s <- strsplit(t, "(?:(?<=[.!?])|(?<=[.!?]\\*\\*))\\s+(?=[A-Z\\[(\"\u201c*])", perl = TRUE)[[1]]
     # a citation that trails its sentence ("... 0.655. [E3]") belongs to it
     keep <- character(0)
     for (piece in s) {
@@ -69,6 +83,12 @@
 # Is one figure supported by the facts / passages a sentence cites?
 .figure_ok <- function(fig, type, facts, texts) {
   if (any(grepl(fig, texts, fixed = TRUE))) return(TRUE)
+  if (type == "pct") {
+    # the same percentage written the other way: "50 percent" for "50%"
+    num <- sub("\\s?(%|percent)$", "", fig)
+    either <- paste0("(?<![\\d.])", gsub(".", "\\.", num, fixed = TRUE), "\\s?(?:%|percent\\b)")
+    if (any(grepl(either, texts, perl = TRUE))) return(TRUE)
+  }
   if (is.null(facts) || nrow(facts) == 0L) return(FALSE)
   pick <- function(col) if (col %in% names(facts)) facts[[col]] else NULL
   if (type == "dec") {
@@ -120,6 +140,17 @@
   any(refs$year == year & (startsWith(refs$first_author, a) | grepl(a, refs$first_author, fixed = TRUE)))
 }
 
+# Research sources as reference-list rows (`first_author`, `year`), one per
+# author - a text may name any of a study's authors.
+.research_refs <- function(sources) {
+  rows <- lapply(seq_len(NROW(sources)), function(i) {
+    a <- sources$authors[[i]]
+    data.frame(first_author = .ascii_lower(dplyr::coalesce(a$family, a$literal)),
+               year = rep(as.character(sources$year[[i]]), NROW(a)))
+  })
+  do.call(rbind, c(list(data.frame(first_author = character(0), year = character(0))), rows))
+}
+
 .REF_STOP <- c("In", "Since", "By", "From", "Between", "Until", "As", "The", "Table", "Figure",
                "Section", "Box", "Report", month.name, month.abb)
 
@@ -130,16 +161,26 @@
 #' @param guidance Output of [load_guidance()].
 #' @param expected_sections Report section keys that must appear as
 #'   `[[section:key]]` markers (`NULL` for chat).
+#' @param research `NULL`, or the research pack the text was written from:
+#'   a list with `findings` (`id` such as `"S3.2"`, `finding`, `quote`,
+#'   `claim_type`, `scope`) and `sources` (`authors`, a list column, and
+#'   `year`).
 #' @return A list: `issues` (data frame: `section`, `type`, `detail`,
 #'   `sentence`; types `unknown_evidence_id`, `unknown_guidance_id`,
-#'   `figure_not_supported`, `uncited_figure`, `external_reference`,
-#'   `missing_section`) and `cited` (data frame: `id`, `source` -
-#'   `"evidence"`/`"guidance"`, `found`).
+#'   `unknown_research_id`, `figure_not_supported`, `uncited_figure`,
+#'   `causal_claim_unsupported`, `scope_misstated`, `external_reference`,
+#'   `missing_section`)
+#'   and `cited` (data frame: `id`, `source` - `"evidence"`/`"guidance"`/
+#'   `"research"`, `found`).
 #' @export
 verify_text <- function(text, evidence = NULL, guidance = NULL,
-                        expected_sections = NULL) {
+                        expected_sections = NULL, research = NULL) {
   facts <- evidence$facts
   passages <- guidance$passages
+  found <- research$findings
+  # studies the text may name: the guidance's reference list, and the
+  # authors of the research it was given
+  refs <- rbind(guidance$refs[c("first_author", "year")], .research_refs(research$sources))
   stop_words <- c(.REF_STOP, cgjrdata::cgjr_ctf$unit_name |> unique() |>
                     strsplit("\\s+") |> vapply(`[[`, character(1), 1L))
   sents <- .sentences(text)
@@ -153,16 +194,37 @@ verify_text <- function(text, evidence = NULL, guidance = NULL,
     s <- sents$sentence[[i]]; sec <- sents$section[[i]]
     ids <- .cited_ids(s)
     e_ids <- ids[startsWith(ids, "E")]; g_ids <- ids[startsWith(ids, "G")]
+    s_ids <- ids[startsWith(ids, "S")]
     e_ok <- !is.null(facts) & e_ids %in% facts$id
     g_ok <- !is.null(passages) & g_ids %in% passages$id
+    s_ok <- !is.null(found) & s_ids %in% found$id
     if (length(ids)) cited[[length(cited) + 1L]] <- data.frame(
-      id = c(e_ids, g_ids), source = rep(c("evidence", "guidance"), c(length(e_ids), length(g_ids))),
-      found = c(e_ok, g_ok))
+      id = c(e_ids, g_ids, s_ids),
+      source = rep(c("evidence", "guidance", "research"), c(length(e_ids), length(g_ids), length(s_ids))),
+      found = c(e_ok, g_ok, s_ok))
     for (id in e_ids[!e_ok]) add(sec, "unknown_evidence_id",
       if (is.null(facts)) sprintf("%s cited but no dashboard selection is loaded", id)
       else sprintf("%s is not in the evidence register", id), s)
     for (id in g_ids[!g_ok]) add(sec, "unknown_guidance_id",
       sprintf("%s is not a passage of the guidance", id), s)
+    for (id in s_ids[!s_ok]) add(sec, "unknown_research_id",
+      if (is.null(found)) sprintf("%s cited but no research was given", id)
+      else sprintf("%s is not one of the research findings", id), s)
+    # causal wording resting only on findings the research does not call causal
+    s_cited <- found[found$id %in% s_ids, , drop = FALSE]
+    if (NROW(s_cited) && !any(s_cited$claim_type == "causal") && grepl(.CAUSAL_RE, s, perl = TRUE)) {
+      add(sec, "causal_claim_unsupported",
+          sprintf("States a cause, but %s %s not a causal finding", paste(s_cited$id, collapse = ", "),
+                  if (NROW(s_cited) == 1L) "is" else "are"), s)
+    }
+    # evidence from elsewhere stated as a fact about the country
+    country <- evidence$meta$base_name
+    if (NROW(s_cited) && !is.null(s_cited$scope) && all(s_cited$scope != "country") &&
+        !is.null(country) && grepl(country, s, fixed = TRUE)) {
+      add(sec, "scope_misstated",
+          sprintf("Names %s, but %s %s evidence from elsewhere", country,
+                  paste(s_cited$id, collapse = ", "), if (NROW(s_cited) == 1L) "is" else "are"), s)
+    }
 
     figs <- .figures(s)
     n_figs <- length(unlist(figs))
@@ -171,7 +233,7 @@ verify_text <- function(text, evidence = NULL, guidance = NULL,
         paste("Figure(s) with no citation:", paste(unlist(figs), collapse = ", ")), s)
     } else if (n_figs) {
       f <- if (length(e_ids[e_ok])) facts[facts$id %in% e_ids, , drop = FALSE]
-      texts <- c(f$text, passages$text[passages$id %in% g_ids])
+      texts <- c(f$text, passages$text[passages$id %in% g_ids], s_cited$finding, s_cited$quote)
       for (type in names(figs)) for (fig in figs[[type]]) {
         if (!.figure_ok(fig, type, f, texts)) add(sec, "figure_not_supported",
           sprintf("%s is not in the cited source(s) %s", fig, paste(ids, collapse = ", ")), s)
@@ -180,8 +242,9 @@ verify_text <- function(text, evidence = NULL, guidance = NULL,
 
     ay <- .author_years(s, stop_words)
     for (j in seq_len(nrow(ay))) {
-      if (!.ref_known(ay$name[[j]], ay$year[[j]], guidance$refs)) add(sec, "external_reference",
-        sprintf("%s (%s) is not in the guidance's reference list", ay$name[[j]], ay$year[[j]]), s)
+      if (!.ref_known(ay$name[[j]], ay$year[[j]], refs)) add(sec, "external_reference",
+        sprintf("%s (%s) is neither in the guidance's reference list nor among the research given",
+                ay$name[[j]], ay$year[[j]]), s)
     }
   }
 
@@ -209,11 +272,14 @@ verification_summary <- function(v) {
   head <- if (n == 0L) "No citations." else if (bad == 0L)
     sprintf("%d citation%s checked, all found in the sources.", n, if (n == 1L) "" else "s")
   else sprintf("%d citation%s checked, %d not found.", n, if (n == 1L) "" else "s", bad)
-  other <- v$issues[!v$issues$type %in% c("unknown_evidence_id", "unknown_guidance_id"), ]
+  other <- v$issues[!v$issues$type %in% c("unknown_evidence_id", "unknown_guidance_id",
+                                           "unknown_research_id"), ]
   if (nrow(other) == 0L) return(paste(head, "No other issues."))
   labels <- c(figure_not_supported = "figure(s) not matching the cited source",
               uncited_figure = "uncited figure(s)",
-              external_reference = "reference(s) not in the guidance",
+              external_reference = "reference(s) not among the sources given",
+              causal_claim_unsupported = "causal claim(s) on non-causal findings",
+              scope_misstated = "finding(s) from elsewhere stated as about the country",
               missing_section = "missing section(s)")
   tab <- table(other$type)
   paste(head, paste(sprintf("%d %s", tab, labels[names(tab)]), collapse = "; "), "flagged.")
@@ -221,11 +287,16 @@ verification_summary <- function(v) {
 
 # HTML from Markdown with each citation id as a badge whose tooltip is its
 # source (the fact sentence, or the guidance section, page and passage).
-.render_cited_html <- function(md, evidence = NULL, guidance = NULL) {
+.render_cited_html <- function(md, evidence = NULL, guidance = NULL, research = NULL) {
   html <- commonmark::markdown_html(md %||% "", extensions = TRUE)
-  facts <- evidence$facts; passages <- guidance$passages
+  facts <- evidence$facts; passages <- guidance$passages; found <- research$findings
   badge <- function(id) {
-    if (startsWith(id, "E")) {
+    if (startsWith(id, "S")) {
+      j <- match(id, found$id)
+      tip <- if (is.na(j)) "Not found in the research" else sprintf(
+        "Research finding: %s Quote: \"%s\"", found$finding[[j]], found$quote[[j]])
+      cls <- if (is.na(j)) "cgjr-cite cgjr-cite-bad" else "cgjr-cite cgjr-cite-s"
+    } else if (startsWith(id, "E")) {
       j <- match(id, facts$id)
       tip <- if (is.na(j)) "Not found in the evidence register" else facts$text[[j]]
       cls <- if (is.na(j)) "cgjr-cite cgjr-cite-bad" else "cgjr-cite cgjr-cite-e"

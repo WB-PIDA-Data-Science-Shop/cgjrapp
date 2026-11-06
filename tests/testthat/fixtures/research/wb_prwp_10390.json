@@ -1,0 +1,49 @@
+{
+ "rows": 1,
+ "os": 0,
+ "page": 1,
+ "total": 1,
+ "documents": {
+  "D34034392": {
+   "id": "34034392",
+   "display_title": "Introducing E-Procurement in Bangladesh:  The Promise of Efficiency and Openness",
+   "docna": {
+    "0": {
+     "docna": "Introducing E-Procurement in Bangladesh:  The Promise of Efficiency and Openness"
+    }
+   },
+   "docdt": "2023-04-03T04:00:00Z",
+   "docty": "Policy Research Working Paper",
+   "majdocty": "Publications & Research",
+   "authors": {
+    "0": {
+     "author": "Blum, Jurgen Rene"
+    },
+    "1": {
+     "author": "Datta, Arkopal"
+    },
+    "2": {
+     "author": "Fazekas, Mihály"
+    },
+    "3": {
+     "author": "Samaddar, Sushmita"
+    },
+    "4": {
+     "author": "Siddique, Ishtiak"
+    }
+   },
+   "count": "Bangladesh",
+   "lang": "English",
+   "repnb": "WPS10390",
+   "colti": "Policy Research working paper ; no. WPS 10390; Impact Evaluation series",
+   "dois": "10.1596/1813-9450-10390",
+   "url": "http://documents.worldbank.org/curated/en/099246304032338660",
+   "pdfurl": "http://documents.worldbank.org/curated/en/099246304032338660/pdf/IDU09f05add909870047c80a654079eafc717d46.pdf",
+   "txturl": "http://documents.worldbank.org/curated/en/099246304032338660/text/IDU09f05add909870047c80a654079eafc717d46.txt",
+   "abstracts": {
+    "cdata!": "Governments around the world spend about one-third of their budgets through public procurement systems where electronic administration of public tenders promises great benefits. However, surprisingly little is known about how, under which circumstances, and through which features electronic systems work. To address these questions, this paper looks at the introduction of an electronic procurement system compared to a fully paper-based system in Bangladesh in 2011–16. The impact of the electronic procurement system on access to public tenders, their economy, and administrative efficiency is estimated. Contracts were matched both within procuring entities and years, and fixed effects regressions were run to address biases emanating from nonrandom assignment to treatment. The findings show an overwhelmingly positive impact. Access improves, with the number of bidders increasing by 1.6–2.2 and the probability of a single bidder decreasing by 7.8–13.5 percentage points. Economy also improves as discounts firms offer increase by 7.4–8.0 percentage points. Administrative efficiency greatly improves too: the total time of processing a tender—starting from the public call for tenders to contract signature—drops by 15.6–19.2 days. However, it is possible that low performance and rent-seeking were displaced to the contract implementation phase, which remained principally paper-administered. These results indicate that the government directly saved US$460 million to US$513 million in the analyzed electronic tenders, largely due to increased winning rebates and lower advertising costs. Considering the indirect macro effects, the introduction of electronic procurement increased Bangladesh’s gross domestic product by 0.48 to 0.54 percent, or US$1.4 billion to US$1.6 billion in 2019."
+   },
+   "guid": "099246304032338660"
+  }
+ }
+}

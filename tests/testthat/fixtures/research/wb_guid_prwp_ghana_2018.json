@@ -1,0 +1,45 @@
+{
+ "rows": 1,
+ "os": 0,
+ "page": 1,
+ "total": 1,
+ "documents": {
+  "D30433734": {
+   "id": "30433734",
+   "authors": {
+    "0": {
+     "author": "Rasul, Imran"
+    },
+    "1": {
+     "author": "Rogger, Daniel Oliver"
+    },
+    "2": {
+     "author": "Williams, Martin J."
+    }
+   },
+   "count": "Ghana",
+   "docna": {
+    "0": {
+     "docna": "Management and Bureaucratic Effectiveness : Evidence from the Ghanaian Civil Service"
+    }
+   },
+   "docty": "Policy Research Working Paper",
+   "lang": "English",
+   "entityids": {
+    "entityid": "090224b0861f4269_2_0"
+   },
+   "repnb": "WPS8595",
+   "docdt": "2018-09-19T04:00:00Z",
+   "majdocty": "Publications & Research",
+   "abstracts": {
+    "cdata!": "A burgeoning area of social science research examines how state capabilities and bureaucratic effectiveness shape economic development. This paper studies how the management practices of civil service bureaucrats correlate to the delivery of public projects, using novel data from the Ghanaian Civil Service. This paper combines hand-coded progress reports on 3,600 projects with a management survey "
+   },
+   "colti": "Policy Research working paper|no. WPS 8595",
+   "display_title": "Management and Bureaucratic Effectiveness : Evidence from the Ghanaian Civil Service",
+   "pdfurl": "http://documents.worldbank.org/curated/en/335361537384686708/pdf/WPS8595.pdf",
+   "txturl": "http://documents.worldbank.org/curated/en/335361537384686708/text/WPS8595.txt",
+   "guid": "335361537384686708",
+   "url": "http://documents.worldbank.org/curated/en/335361537384686708"
+  }
+ }
+}

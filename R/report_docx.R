@@ -74,23 +74,41 @@
 }
 
 # Markdown narrative (AI Report) -> paragraphs: "##"/"###"/"####" headings,
-# "- " bullets kept as bullets, emphasis markers dropped; NULL / "" adds nothing.
+# "- " bullets kept as bullets, **bold** lead sentences kept bold (other
+# emphasis in headings dropped); NULL / "" adds nothing.
 .add_narrative <- function(doc, text) {
   if (is.null(text) || !nzchar(text)) return(doc)
   for (line in strsplit(text, "\n", fixed = TRUE)[[1]]) {
-    t <- trimws(gsub("\\*\\*|__", "", line))
+    t <- trimws(gsub("__", "", line))
     if (!nzchar(t)) next
     doc <- if (grepl("^#{3,4} ", t)) {
-      officer::body_add_par(doc, sub("^#+ ", "", t), style = "heading 3")
+      officer::body_add_par(doc, gsub("\\*\\*", "", sub("^#+ ", "", t)), style = "heading 3")
     } else if (startsWith(t, "## ")) {
-      officer::body_add_par(doc, sub("^## ", "", t), style = "heading 2")
+      officer::body_add_par(doc, gsub("\\*\\*", "", sub("^## ", "", t)), style = "heading 2")
     } else if (grepl("^[-*+] ", t)) {
-      officer::body_add_par(doc, paste0("\u2022 ", sub("^[-*+] ", "", t)), style = "Normal")
+      .add_md_par(doc, paste0("\u2022 ", sub("^[-*+] ", "", t)))
     } else {
-      officer::body_add_par(doc, t, style = "Normal")
+      .add_md_par(doc, t)
     }
   }
   doc
+}
+
+# One Markdown paragraph -> a Word paragraph: **text** in bold (a CGJR
+# paragraph's lead sentence), *text* in italics (titles in a reference
+# entry); an escaped \* or \_ is the character itself.
+.add_md_par <- function(doc, md) {
+  runs <- list()
+  bold <- strsplit(md, "**", fixed = TRUE)[[1]]  # every second piece is bold
+  for (i in seq_along(bold)) {
+    italic <- strsplit(bold[[i]], "(?<!\\\\)\\*", perl = TRUE)[[1]]  # split at unescaped *
+    for (j in seq_along(italic)) {
+      if (!nzchar(italic[[j]])) next
+      runs[[length(runs) + 1L]] <- officer::ftext(gsub("\\\\([\\\\*_])", "\\1", italic[[j]]),
+        officer::fp_text_lite(bold = i %% 2L == 0L, italic = j %% 2L == 0L))
+    }
+  }
+  officer::body_add_fpar(doc, do.call(officer::fpar, runs), style = "Normal")
 }
 
 # Chart, then its table(s), for one chart key + view.
@@ -103,50 +121,29 @@
   .add_table(doc, if (view == "static") .static_table(f) else .dynamic_table(f))
 }
 
-#' Build the AI Report Word document from an evidence pack
+#' Build the data report Word document from an evidence pack
 #'
 #' Overview (the Overall Clusters chart and table, the dynamic change, and the
 #' data-driven priority areas), then one chapter per selected cluster: its
 #' subcluster-average chart and table, then each leaf's indicator chart,
 #' indicator table, dynamic changes and excluded indicators, and the areas not
-#' yet measured. An appendix lists every fact with its evidence id.
-#'
-#' With an AI narrative ([parse_narrative()]), each section's text goes under
-#' its heading; `"prioritization"` follows the priority-areas table,
-#' `"recommendations"` and a data-limitations note close the chapter, and the
-#' appendices add the guidance passages cited and the automated verification.
+#' yet measured. An appendix lists every fact with its evidence id. No AI
+#' text: the AI Report's own document is [ai_report_docx()].
 #'
 #' @param evidence Output of [build_evidence()].
-#' @param narrative Optional named list of Markdown text, keyed `"overview"`,
-#'   `"prioritization"`, a cluster key, a leaf key, or `"recommendations"`.
-#'   `NULL` gives the data-only report.
-#' @param leaves Optional leaf keys: report only these sections (and skip the
-#'   Overview and cluster-average charts) - the AI Report's one-section scope.
-#' @param ai Optional list for the AI-assisted version: `guidance` (output of
-#'   [load_guidance()]), `cited` (data frame `id`, `section`, `title`, `page`)
-#'   and `verification` (output of [verify_text()]).
 #' @return An `officer` `rdocx`; write it with `print(doc, target = path)`.
-#' @seealso [build_evidence()], [priority_areas()]
+#' @seealso [build_evidence()], [priority_areas()], [ai_report_docx()]
 #' @export
-evidence_report_docx <- function(evidence, narrative = NULL, leaves = NULL, ai = NULL) {
+evidence_report_docx <- function(evidence) {
   ev <- evidence; m <- ev$meta; f <- ev$facts
   dir <- tempfile("cgjr_charts_"); dir.create(dir)
   on.exit(unlink(dir, recursive = TRUE), add = TRUE)
-  nar <- function(key) if (is.null(narrative)) NULL else narrative[[key]]
-  show_overview <- is.null(leaves) && (is.null(narrative) || !is.null(nar("overview")))
-  in_scope <- function(leaf) is.null(leaves) || leaf %in% leaves
 
-  doc <- officer::read_docx()
-  if (identical(ai$guidance$source, "real")) {
-    doc <- officer::body_add_par(doc, "OFFICIAL USE ONLY", style = "Normal")
-  }
-  doc <- doc |>
+  doc <- officer::read_docx() |>
     officer::body_add_par(paste0("Governance and Public Institutions: ", m$base_name),
                           style = "heading 1") |>
-    officer::body_add_par(
-      paste0(if (is.null(narrative)) "Data report" else "AI-assisted draft",
-             " - ", format(m$generated, "%B %d, %Y")),
-      style = "heading 2") |>
+    officer::body_add_par(paste0("Data report - ", format(m$generated, "%B %d, %Y")),
+                          style = "heading 2") |>
     officer::body_add_par(sprintf(
       "Selection: %s compared to %d units (%s). Thresholds: %s. Dynamic view: even years %d-%d.",
       m$base_name, length(m$comparison_units),
@@ -155,62 +152,41 @@ evidence_report_docx <- function(evidence, narrative = NULL, leaves = NULL, ai =
     officer::body_add_par(paste0(
       "Every figure in this document was computed by the GOVCGJR Benchmarking ",
       "Dashboard for the selection above; evidence ids (E1, E2, ...) refer to ",
-      "the register in the appendix.",
-      if (is.null(narrative)) " This version contains no AI-generated text." else paste0(
-        " Narrative text was drafted by a language model from these figures and from ",
-        ai$guidance$label %||% "the CGJR guidance note",
-        "; guidance passage ids (G1.2-3, ...) are listed in the appendix. It must be ",
-        "reviewed before use.")
-    ), style = "Normal")
+      "the register in the appendix. This version contains no AI-generated text."),
+      style = "Normal")
 
   # Overview
-  if (show_overview) {
-    doc <- officer::body_add_par(doc, "Overview", style = "heading 1")
-    doc <- .add_narrative(doc, nar("overview"))
-    is_cluster <- function(x) x$level == "cluster"
-    doc <- .add_chart_block(doc, ev, "overall__clusters", "static", is_cluster, dir)
-    doc <- .add_chart_block(doc, ev, "overall__clusters", "dynamic", is_cluster, dir)
-    pa <- priority_areas(ev)
-    pa <- pa[pa$cluster %in% m$clusters, ]
-    if (nrow(pa)) {
-      doc <- officer::body_add_par(doc, "Priority areas (lowest band, then furthest from the frontier)",
-                                   style = "heading 3")
-      doc <- .add_table(doc, transform(.static_table(pa),
-                                       `Gap to comparators` = sprintf("%+.3f", pa$gap),
-                                       check.names = FALSE))
-    }
-    if (!is.null(nar("prioritization"))) {
-      doc <- officer::body_add_par(doc, "Priorities for this chapter", style = "heading 2")
-      doc <- .add_narrative(doc, nar("prioritization"))
-    }
+  doc <- officer::body_add_par(doc, "Overview", style = "heading 1")
+  is_cluster <- function(x) x$level == "cluster"
+  doc <- .add_chart_block(doc, ev, "overall__clusters", "static", is_cluster, dir)
+  doc <- .add_chart_block(doc, ev, "overall__clusters", "dynamic", is_cluster, dir)
+  pa <- priority_areas(ev)
+  pa <- pa[pa$cluster %in% m$clusters, ]
+  if (nrow(pa)) {
+    doc <- officer::body_add_par(doc, "Priority areas (lowest band, then furthest from the frontier)",
+                                 style = "heading 3")
+    doc <- .add_table(doc, transform(.static_table(pa),
+                                     `Gap to comparators` = sprintf("%+.3f", pa$gap),
+                                     check.names = FALSE))
   }
 
   # One chapter per selected cluster
   for (cl in m$clusters) {
-    cl_leaves <- unique(c(ev$gaps$leaf[ev$gaps$cluster %in% cl],
-                          vapply(Filter(function(c) c$cluster %in% cl && !is.na(c$leaf), ev$charts),
-                                 `[[`, character(1), "leaf")))
-    if (!is.null(leaves) && !any(cl_leaves %in% leaves)) next
     doc <- officer::body_add_par(doc, m$cluster_names[[cl]], style = "heading 1")
-    doc <- .add_narrative(doc, nar(cl))
-    if (is.null(leaves)) {
-      in_cl <- function(x) x$level == "subcluster" & x$cluster %in% cl
-      doc <- .add_chart_block(doc, ev, paste0(.OVERALL_PREFIX, cl), "static", in_cl, dir)
-      doc <- .add_chart_block(doc, ev, paste0(.OVERALL_PREFIX, cl), "dynamic", in_cl, dir)
+    in_cl <- function(x) x$level == "subcluster" & x$cluster %in% cl
+    doc <- .add_chart_block(doc, ev, paste0(.OVERALL_PREFIX, cl), "static", in_cl, dir)
+    doc <- .add_chart_block(doc, ev, paste0(.OVERALL_PREFIX, cl), "dynamic", in_cl, dir)
 
-      # branching subclusters' own charts (e.g. Public Financial Management)
-      for (ch in Filter(function(c) c$cluster %in% cl && is.na(c$leaf) &&
-                          !c$key %in% paste0(.OVERALL_PREFIX, c("clusters", cl)),
-                        ev$charts)) {
-        in_br <- function(x) x$level == "sub_subcluster" & x$parent == ch$title
-        doc <- .add_chart_block(doc, ev, ch$key, ch$view, in_br, dir)
-      }
+    # branching subclusters' own charts (e.g. Public Financial Management)
+    for (ch in Filter(function(c) c$cluster %in% cl && is.na(c$leaf) &&
+                        !c$key %in% paste0(.OVERALL_PREFIX, c("clusters", cl)),
+                      ev$charts)) {
+      in_br <- function(x) x$level == "sub_subcluster" & x$parent == ch$title
+      doc <- .add_chart_block(doc, ev, ch$key, ch$view, in_br, dir)
     }
 
-    for (ch in Filter(function(c) c$cluster %in% cl && !is.na(c$leaf) && in_scope(c$leaf),
-                      ev$charts)) {
+    for (ch in Filter(function(c) c$cluster %in% cl && !is.na(c$leaf), ev$charts)) {
       doc <- officer::body_add_par(doc, ch$title, style = "heading 2")
-      doc <- .add_narrative(doc, nar(ch$leaf))
       doc <- .add_chart(doc, ch, m, dir)
       lf <- f[f$level == "indicator" & f$leaf %in% ch$leaf, ]
       doc <- .add_table(doc, .static_table(lf[lf$view == "static", ]))
@@ -227,13 +203,7 @@ evidence_report_docx <- function(evidence, narrative = NULL, leaves = NULL, ai =
       }
     }
 
-    # areas with no indicators: no chart, but the AI narrative still covers them
-    g <- ev$gaps[ev$gaps$cluster %in% cl & vapply(ev$gaps$leaf, in_scope, logical(1)), ]
-    for (j in seq_len(nrow(g))) {
-      if (is.null(nar(g$leaf[[j]]))) next
-      doc <- officer::body_add_par(doc, g$name[[j]], style = "heading 2")
-      doc <- .add_narrative(doc, nar(g$leaf[[j]]))
-    }
+    g <- ev$gaps[ev$gaps$cluster %in% cl, ]
     if (nrow(g)) {
       doc <- officer::body_add_par(doc, paste0(
         "Not yet measured (no indicators available): ",
@@ -241,39 +211,87 @@ evidence_report_docx <- function(evidence, narrative = NULL, leaves = NULL, ai =
     }
   }
 
-  if (!is.null(narrative)) {
-    if (!is.null(nar("recommendations"))) {
-      doc <- officer::body_add_par(doc, "Possible recommendations", style = "heading 1")
-      doc <- .add_narrative(doc, nar("recommendations"))
-    }
-    doc <- officer::body_add_par(doc, "Data limitations", style = "heading 2") |>
-      officer::body_add_par(paste(
-        "The figures in this chapter are the dashboard's closeness-to-frontier benchmarking",
-        "of publicly available institutional indicators. They are a starting point: their",
-        "quality depends on each source's coverage, definitions and measurement, and the",
-        "analysis should be complemented with country-specific data and consultations with",
-        "the country team and government counterparts."), style = "Normal")
+  # Appendix
+  doc <- officer::body_add_par(doc, "Appendix: evidence register", style = "heading 1")
+  .add_table(doc, data.frame(Evidence = f$id, Statement = f$text))
+}
+
+#' Build the AI Report's Word document
+#'
+#' The report as the AI Report tab previews it: its sections in order, each
+#' under its heading and followed by the dashboard's chart(s) for it; research
+#' cited author-date, "(World Bank 2020, 10)", with a References list; the
+#' narrative format's questions under "Questions for further analysis". It is
+#' written for readers: the dashboard and guidance ids (`[E3]`, `[G1.2-1]`) are
+#' taken out, and there are no data tables or appendices (the data report,
+#' [evidence_report_docx()], has those). The checks behind every citation are
+#' in the app.
+#'
+#' @param evidence Output of [build_evidence()] the report was written from.
+#' @param sections The plan's sections, in display order: a data frame `key`,
+#'   `title` (`plan_ai_report()$sections`).
+#' @param narrative Output of [parse_narrative()]: Markdown by section key. A
+#'   section with no text (a run that stopped part-way) is left out.
+#' @param research The research pack the report cites, or `NULL`.
+#' @param guidance Output of [load_guidance()]; with the real guidance note the
+#'   document is marked Official Use Only.
+#' @return An `officer` `rdocx`; write it with `print(doc, target = path)`.
+#' @seealso [plan_ai_report()], [parse_narrative()]
+#' @export
+ai_report_docx <- function(evidence, sections, narrative, research = NULL, guidance = NULL) {
+  ev <- evidence; m <- ev$meta
+  dir <- tempfile("cgjr_charts_"); dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  report <- paste(unlist(narrative), collapse = "\n")
+  # the reader's text: research author-date (lettered across the whole
+  # report), and no dashboard or guidance ids
+  text_of <- function(key) {
+    text <- narrative[[key]]
+    if (!is.null(research)) text <- .render_citations(text, research, report)
+    .strip_ids(text)
   }
 
-  # Appendices
-  doc <- officer::body_add_par(doc, "Appendix: evidence register", style = "heading 1")
-  doc <- .add_table(doc, data.frame(Evidence = f$id, Statement = f$text))
-  if (!is.null(ai$cited) && nrow(ai$cited)) {
-    doc <- officer::body_add_par(doc, "Appendix: guidance passages cited", style = "heading 1") |>
-      officer::body_add_par(paste0("Source: ", ai$guidance$label, "."), style = "Normal")
-    doc <- .add_table(doc, data.frame(Id = ai$cited$id, Section = ai$cited$section,
-                                      Title = ai$cited$title, Page = ai$cited$page))
+  doc <- officer::read_docx()
+  if (identical(guidance$source, "real")) {
+    doc <- officer::body_add_par(doc, "OFFICIAL USE ONLY", style = "Normal")
   }
-  if (!is.null(ai$verification)) {
-    v <- ai$verification
-    doc <- officer::body_add_par(doc, "Appendix: automated verification", style = "heading 1") |>
-      officer::body_add_par(paste(
-        "Every citation and figure in the narrative was checked by the dashboard against the",
-        "evidence register and the guidance passages.", verification_summary(v)), style = "Normal")
-    if (nrow(v$issues)) {
-      doc <- .add_table(doc, data.frame(Section = v$issues$section, Issue = v$issues$detail,
-                                        Sentence = v$issues$sentence))
+  doc <- doc |>
+    officer::body_add_par(paste0("Governance and Public Institutions: ", m$base_name),
+                          style = "heading 1") |>
+    officer::body_add_par(sprintf(
+      "AI-assisted draft, %s: %s compared with %d countries. To be reviewed before use.",
+      format(m$generated, "%B %d, %Y"), m$base_name, length(m$comparison_units)), style = "Normal")
+
+  annexed <- FALSE
+  for (i in seq_len(nrow(sections))) {
+    key <- sections$key[[i]]
+    if (is.null(narrative[[key]])) next
+    question <- startsWith(key, "questions_")
+    if (question && !annexed) {
+      doc <- officer::body_add_par(doc, "Questions for further analysis", style = "heading 1")
+      annexed <- TRUE
     }
+    level <- if (!question && key %in% c("overview", "recommendations", m$clusters)) "heading 1"
+             else "heading 2"
+    doc <- officer::body_add_par(doc, sections$title[[i]], style = level)
+    doc <- .add_narrative(doc, text_of(key))
+    for (ch in .section_charts(ev, key)) doc <- .add_chart(doc, ch, m, dir)
+  }
+
+  refs <- if (!is.null(research)) .reference_list(report, research)
+  if (length(refs)) {
+    doc <- officer::body_add_par(doc, "References", style = "heading 1")
+    for (entry in refs) doc <- .add_md_par(doc, entry)
   }
   doc
+}
+
+# Charts shown under a report section (the dashboard's own), in the preview
+# and in the Word document: the overview and each cluster have a static and an
+# over-time chart; a section has its static chart only (the dashboard draws no
+# over-time chart for it).
+.section_charts <- function(ev, key) {
+  want <- if (key == "overview") "overall__clusters" else
+    if (key %in% ev$meta$clusters) paste0(.OVERALL_PREFIX, key) else key
+  Filter(function(c) c$key %in% want, ev$charts)
 }

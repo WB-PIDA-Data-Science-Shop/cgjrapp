@@ -69,11 +69,20 @@ run_cgjrapp()
 ## AI Report and Chat
 
 The **AI Report** tab drafts the governance chapter (the full chapter, one
-cluster, or one section) following the CGJR guidance note's structure: for
-each area, what the data show, why it matters for growth and jobs, and the
-questions the country team still has to answer, then possible
-recommendations. The **Chat** sub-tab answers questions from the guidance and
-the applied selection's data.
+cluster, or one section) from the CGJR guidance note, in one of two formats:
+
+- **Structured**: each area under three fixed headings (what the data show,
+  why it matters for growth and jobs, questions for the country team), then
+  possible recommendations.
+- **Narrative**: prose as a published CGJR reads. As the guidance asks, the
+  top three priority areas are treated in depth, each with its own
+  recommendations; other areas get a paragraph; a closing synthesis groups the
+  recommendations by pillar, with sequencing; the guidance's diagnostic
+  questions go to an annex, "Questions for further analysis".
+
+An optional *focus for this draft* steers what the report emphasises; it is an
+instruction, never a source. The **Chat** sub-tab answers questions from the
+guidance and the applied selection's data.
 
 Every figure comes from the dashboard's evidence pack and is cited `[E12]`;
 every guidance-derived statement cites a passage `[G1.2-3]`. The app then

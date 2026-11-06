@@ -1,0 +1,50 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message": {
+    "DOI": "10.1596/1813-9450-10390",
+    "type": "book",
+    "title": [
+      "Introducing E-Procurement in Bangladesh: The Promise of Efficiency and Openness"
+    ],
+    "author": [
+      {
+        "given": "Jürgen René",
+        "family": "Blum",
+        "sequence": "first"
+      },
+      {
+        "given": "Arkopal",
+        "family": "Datta",
+        "sequence": "additional"
+      },
+      {
+        "given": "Mihály",
+        "family": "Fazekas",
+        "sequence": "additional"
+      },
+      {
+        "given": "Sushmita",
+        "family": "Samaddar",
+        "sequence": "additional"
+      },
+      {
+        "given": "Ishtiak",
+        "family": "Siddique",
+        "sequence": "additional"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2023,
+          4,
+          5
+        ]
+      ]
+    },
+    "publisher": "World Bank, Washington, DC",
+    "container-title": [],
+    "URL": "https://doi.org/10.1596/1813-9450-10390"
+  }
+}

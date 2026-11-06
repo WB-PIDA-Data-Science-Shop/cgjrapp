@@ -1,6 +1,13 @@
 # LLM layer: endpoint check (mocked HTTP), error messages, async streaming
 # (fake chat). No network.
 
+test_that("tests never see the developer's own CGJR_* settings", {
+  # setup-env.R unsets them; with CGJR_LLM_PROVIDER=mai left in place the
+  # tests below would fetch a real mAI token and call the service
+  leaked <- setdiff(grep("^CGJR_", names(Sys.getenv()), value = TRUE), "CGJR_LLM_LIVE_TEST")
+  expect_identical(leaked, character(0))
+})
+
 test_that("check_llm_available() reports ok, auth and unreachable", {
   withr::local_envvar(CGJR_LLM_BASE_URL = "https://llm.example/v1", CGJR_LLM_API_KEY = "k")
   httr2::local_mocked_responses(function(req) httr2::response(200))

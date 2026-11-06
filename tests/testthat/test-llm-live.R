@@ -9,6 +9,10 @@
 skip_if_not(identical(Sys.getenv("CGJR_LLM_LIVE_TEST"), "true"),
             "set CGJR_LLM_LIVE_TEST=true to call the live LLM")
 
+# setup-env.R unset the developer's settings for the other tests; this file
+# needs them back to reach the configured provider
+withr::local_envvar(.developer_env)
+
 test_that("the live provider writes a verifiable one-section report", {
   expect_identical(check_llm_available(), "ok")
   g <- load_guidance()
@@ -27,8 +31,11 @@ test_that("the live provider writes a verifiable one-section report", {
 test_that("the live provider answers a chat question with citations", {
   g <- load_guidance()
   chat <- llm_chat(cgjrapp:::.chat_system_prompt(g, NULL))
-  text <- wait_for(cgjrapp:::.stream_text(chat, "What does the guidance ask teams to check about public procurement?"),
-                   timeout = 120)
+  # as the app's chat does (.chat_turn): the question carries the guidance
+  # passages retrieved for it - the system prompt holds none
+  q <- "What does the guidance ask teams to check about public procurement?"
+  text <- wait_for(cgjrapp:::.stream_text(
+    chat, cgjrapp:::.chat_question_message(q, cgjrapp:::.chat_passages(g, q))), timeout = 120)
   v <- verify_text(text, NULL, g)
   message("Live chat: ", verification_summary(v))
   expect_gt(sum(v$cited$source == "guidance" & v$cited$found), 0L)

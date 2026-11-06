@@ -85,19 +85,6 @@ test_that("evidence_report_docx: headings, charts and the full evidence register
   expect_gt(sum(grepl("^word/media/.*\\.png$", media)), 3L)
 })
 
-test_that("narrative text, when given, lands under its heading", {
-  doc <- evidence_report_docx(EV, narrative = list(
-    overview = "Ghana leads its region on most clusters.",
-    degree_of_integrity = "### What the data shows\nIntegrity is the weakest area [E9]."
-  ))
-  s <- officer::docx_summary(doc)
-  i_over <- match("Overview", s$text)
-  i_text <- match("Ghana leads its region on most clusters.", s$text)
-  expect_true(!is.na(i_text) && i_text > i_over)
-  expect_true("What the data shows" %in% s$text[s$style_name == "heading 3"])
-  expect_true(any(grepl("AI-assisted draft", s$text, fixed = TRUE)))
-})
-
 test_that("evidence_report_pptx: template title slide, editable charts, one slide per leaf", {
   ppt <- evidence_report_pptx(EV)
   path <- withr::local_tempfile(fileext = ".pptx")

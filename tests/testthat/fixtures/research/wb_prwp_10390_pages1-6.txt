@@ -1,0 +1,216 @@
+Policy Research Working Paper                     10390
+
+
+
+
+   Introducing E-Procurement in Bangladesh
+             The Promise of Efficiency and Openness
+
+                              Jürgen René Blum
+                                Arkopal Datta
+                               Mihály Fazekas
+                             Sushmita Samaddar
+                               Ishtiak Siddique
+
+
+
+
+Governance Global Practice
+April 2023
+Policy Research Working Paper 10390
+
+
+  Abstract
+  Governments around the world spend about one-third of                             probability of a single bidder decreasing by 7.8–13.5 per-
+  their budgets through public procurement systems where                            centage points. Economy also improves as discounts firms
+  electronic administration of public tenders promises great                        offer increase by 7.4–8.0 percentage points. Administrative
+  benefits. However, surprisingly little is known about how,                        efficiency greatly improves too: the total time of process-
+  under which circumstances, and through which features                             ing a tender—starting from the public call for tenders to
+  electronic systems work. To address these questions, this                         contract signature—drops by 15.6–19.2 days. However,
+  paper looks at the introduction of an electronic procure-                         it is possible that low performance and rent-seeking were
+  ment system compared to a fully paper-based system in                             displaced to the contract implementation phase, which
+  Bangladesh in 2011–16. The impact of the electronic pro-                          remained principally paper-administered. These results
+  curement system on access to public tenders, their economy,                       indicate that the government directly saved US$460 mil-
+  and administrative efficiency is estimated. Contracts were                        lion to US$513 million in the analyzed electronic tenders,
+  matched both within procuring entities and years, and fixed                       largely due to increased winning rebates and lower adver-
+  effects regressions were run to address biases emanating                          tising costs. Considering the indirect macro effects, the
+  from nonrandom assignment to treatment. The findings                              introduction of electronic procurement increased Bangla-
+  show an overwhelmingly positive impact. Access improves,                          desh’s gross domestic product by 0.48 to 0.54 percent, or
+  with the number of bidders increasing by 1.6–2.2 and the                          US$1.4 billion to US$1.6 billion in 2019.
+
+
+
+
+ This paper is a product of the Governance Global Practice. It is part of a larger effort by the World Bank to provide open
+ access to its research and make a contribution to development policy discussions around the world. Policy Research
+ Working Papers are also posted on the Web at http://www.worldbank.org/prwp. The authors may be contacted at
+ jblum@worldbank.org and fazekasm@ceu.edu.
+
+
+
+
+         The Policy Research Working Paper Series disseminates the findings of work in progress to encourage the exchange of ideas about development
+         issues. An objective of the series is to get the findings out quickly, even if the presentations are less than fully polished. The papers carry the
+         names of the authors and should be cited accordingly. The findings, interpretations, and conclusions expressed in this paper are entirely those
+         of the authors. They do not necessarily represent the views of the International Bank for Reconstruction and Development/World Bank and
+         its affiliated organizations, or those of the Executive Directors of the World Bank or the governments they represent.
+
+
+                                                       Produced by the Research Support Team
+                          Introducing E-Procurement in Bangladesh:
+                           The Promise of Efficiency and Openness
+       Jürgen René Blum1, Arkopal Datta2, Mihály Fazekas3, Sushmita Samaddar4, Ishtiak Siddique5
+
+
+
+
+JEL Codes : H57, O12, O53
+Keywords: E-Procurement; Public Procurement; Impact Evaluation; Bangladesh
+
+
+
+
+1
+  Senior Public Sector Specialist and the Task Team Leader for the Bangladesh procurement impact evaluation
+2
+  Field coordinator for this Bangladesh procurement impact evaluation
+3
+  Assistant professor at Central European University and the academic counterpart for the impact evaluation
+4
+  Field coordinator for this Bangladesh procurement impact evaluation
+5
+  Senior Procurement Specialist and the co-Task Team Leader for the Bangladesh procurement impact evaluation
+Acknowledgments: The team is gratefully for the support and cooperation from the Government of Bangladesh, and particularly,
+the Central Procurement Technical Unit (CPTU), the Local Government Engineering Department (LGED), the Roads and
+Highways Department (RHD), and the Bangladesh Water Development Board (BWDB). The team is particularly thankful to Mr.
+Amulya Kumar Debnath, Mr. Md. Faruque Hossain, Mr. Md. Ali Noor, and Mr. Mohammed Shoheler Rahman Chowdhury, for
+their help as the Director General, CPTU during the activities of the project. The authors are thankful for the financial support
+received from the Global Procurement Partnership: Multi-Donor Trust Fund at the World Bank.
+The report greatly benefited from useful inputs and feedback from the World Bank colleagues, including Mr. Vinay Sharma, Ms.
+Alma Kanani, Ms. Elmas Arisoy, Mr. Zafrul Islam, Mr. A.N.M. Mustafizur Rahman, Mr. Md. Kamruzzaman, and Mr. Arafat
+Istiaque. The team is grateful to the multiple reviewers for their helpful comments. The team also recognizes the efforts of Ms.
+Mahmuda Nusrat Hussain, Mr. Shourov Kumar Sharma and Ms. Shahnun Nima Taznia who helped with the logistics of the project.
+1. INTRODUCTION
+1.      Government contracting accounts for roughly 30 percent of general government spending across
+OECD countries (OECD, 2015) and for an even higher share in developing economies (World Bank, 2016).
+Governments depend on public procurement for delivering virtually all public services—be it defense,
+roads or health care. Yet, the risk of rent seeking in procurement is high, and it has often been marred by
+corruption and collusion among bidders, undermining service delivery. On the flipside, efforts to reduce
+the discretion of procurement agents, a widely used reform avenue, have frequently led to inefficiency and
+red tape (Collier et al., 2015; OECD, 2010; World Bank, 2009).
+
+2.      Electronic procurement (e-procurement henceforth) reforms promise helping tackle the dual
+challenge of rent seeking and inefficiency (Fazekas & Blum, 2021; OECD, 2016). As a widely advocated
+tool (OECD, 2016), online publication and submission of tenders can increase transparency and make it
+harder for corrupt agents to seek rents. Electronic processing can cut transaction costs both for businesses
+and the government, making procurement more efficient. Both factors have the potential to boost value for
+money from public tenders.
+
+3.      In practice, however, these benefits are far from guaranteed. If e-procurement makes it harder for
+corrupt officials to hinder unwanted competitors from bidding, they are likely to resort to alternative—and
+potentially socially more costly— rent-seeking strategies (Fisman & Golden, 2017), such as allowing
+connected bidders to lowball bids and later to still make nice profits by cutting corners when implementing
+public works projects. In addition, Small and Medium Enterprises (SMEs) may lack the Information and
+Communication Technology (ICT) skills for submitting bids online, and hence lose out under e-
+procurement.
+
+4.      Furthermore, the evidence on the impacts of e-procurement poses a puzzle. The most reliable study
+on the impact of e-procurement (Lewis-Faupel et al., 2014) finds evidence that e-procurement broadened
+the bidder pool (i.e. increased the share of non-local winners) in India and Indonesia. Yet, interestingly, it
+finds no evidence that e-procurement increased the number of bidders or lowered prices, contrary to
+theoretical predictions. Why? Part of the answer may be context. To fully yield its benefits, e-procurement
+may require enabling conditions such as an ample number of potential market entrants (Straub, 2014) and
+sufficient capacity in the public and private sectors to use e-procurement (Thai, 2009 section III).
+Furthermore, e-procurement systems vary in the scope of procurement processes they digitize and in their
+quality, impacting results (Croom & Brandon-Jones, 2005; Mendes & Fazekas, 2017).
+
+5.      As the effects of e-procurement are ambiguous and context-contingent and the evidence so far is
+limited and inconclusive, further research on its effects and the underlying mechanisms is needed. Seeking
+
+
+                                                                                                            2
+to contribute to this literature, this paper report findings from an impact evaluation of Bangladesh’s e-
+procurement system. It poses the research question:
+
+         Does electronic procurement, in particular electronic tendering and contract award, improve
+         value for money (i.e. economy), access to public tenders and administrative efficiency? If yes,
+         under which conditions?
+
+6.       When the Government of Bangladesh (GOB) introduced e-procurement in 2011, the country
+provided both a promising and challenging context. Procurement-related violence frequently made the
+headlines of newspapers, as local “strongmen” connected to insider firms systematically used armed gangs
+                                                                                         6
+to physically hinder competing bidders from submitting paper-based bids. Part of e-procurement’s promise
+was that it could cut through such practices and drastically increase access to public tenders. At the same
+time, limited administrative capacity and high staff turnover made introducing e-procurement challenging
+(World Bank, 2002).
+
+7.       Crucially to our claim of novel insights, the scope of e-procurement in Bangladesh goes beyond
+most if not all such systems in low and middle-income countries. It digitizes the entire contracting process,
+from advertisement to contract award, including buyer-bidder communication, bidder registration, bid
+submission, and bid evaluation, with no parallel “paper trail”. Hence, it is a fully functional transactional
+system. By contrast, most other e-procurement systems only provide for online advertisement and
+submission of tenders, but the “back-end” of tender evaluation and award remains largely paper-based
+(OECD, 2016).
+
+8.       This impact evaluation focuses on the adoption of e-procurement by the three government agencies
+that are jointly responsible for most7 of Bangladesh’s public works procurement: the Local Government
+Engineering Department (LGED), the Roads and Highways Department (RHD), and the Bangladesh Water
+Development Board (BWDB). These three agencies were also the first to introduce e-procurement in
+Bangladesh, starting in FY2012-13.
+
+9.       Our primary data source is administrative data on public procurement. We obtained detailed
+electronic procurement data for all electronic tenders of BWDB, LGED and RHD from Bangladesh’s
+Central Procurement Technical Unit between FY2011-12 and FY2017-18, a total of 69,240 tenders for 185
+district-level procuring entities.8 To obtain equivalent data for paper-based tenders, we surveyed paper-
+
+
+6
+  In 2014, Bangladesh ranked 145th out of 175 on TI’s Corruption Perception Index. Numerous high -profile, high-value corruption
+scandals in public procurement further support the perception that corruption is a widespread problem.
+7
+  Based on the number and value of contracts.
+8
+  Bangladesh has 64 districts, but each agency does not have an office in each of these districts. For example, BWDB does not have
+offices in districts without any significant rivers or canals.
+
+                                                                                                                                3
+based procurement records for a sample of 10,319 tenders from the same district-level procuring entities
+between FY2011-12 and FY2016-17. FY2011-12 serves as the baseline and FY2017-18 as the endline year,
+by which all three agencies exclusively procured through e-procurement. A survey of 600 procurement
+officials in the three agencies served to capture their perceptions of the new e-procurement system and to
+measure management practices. We also surveyed 600 firms that participated in public works contracts of
+the three agencies across 16 districts, to understand their transaction costs and perceptions about the e-
+procurement system.
+
+10.     Identifying the causal effects of e-procurement is challenging because e-procurement has been
+introduced and phased in at the discretion of implementing authorities and their choices may be strategic,
+for example trying to minimize the exposure of corrupt practices. The central identification challenge in
+our non-experimental setting is that the district-level procuring entities (PE) in our sample had the discretion
+to choose when and for which tenders to adopt e-procurement. This poses the risk of bias due to i) self-
+selection of PEs into e-procurement, ii) strategic sorting of tenders into e-procurement within each PE, iii)
+potential spillovers between electronic and paper-based tenders (for example because officials focus their
+attention on electronic tenders), and iv) potential learning effects to take place for procuring entities
+adopting the new system at different speeds. We combine Coarsened Exact Matching with fixed effects
+regressions in order to approximate causal effects. We run two parallel specifications. First, we match
+tenders within procuring entities but across years. Second, we match tenders within the same years, but
+across procuring entities that have similar baseline dependent variable values. In each of these cases, we
+look at the differences in the dependent variables of tenders least likely to be influenced by spillover effects.
+Specifically, we compare manual tenders administered by procuring entities that run mainly manual tenders
+with electronic tenders administered by procuring entities that run mainly electronic tenders.
+
+11.     We find overwhelmingly positive impacts of e-procurement on a wide range of outcomes tracked.
+First, e-procurement improves open and fair access to public tenders as bidder numbers go up, single
+bidding decreases and non-local firms gain market share. These positive impacts are largely due to effects
+on the “lower tail”. That is, e-procurement led to large improvements in access for PEs with low access at
+baseline. Second, e-procurement also improves value for money (i.e. economy) as winning rebates, that is
+discounts firms offer, increase. This impact results both from increasing the number of bidders and from
+enabling more intense competition among a given number of bidders. By contrast, we find no robust impact
+on contract implementation performance, namely on cost and time overruns. Third, e-procurement enhances
+administrative efficiency, as the total time for processing a tender—from the public call for tenders to
+contract signature—drops substantially. The time required for every major stage of this process shortens,
+
+
+
+
+                                                                                                               4

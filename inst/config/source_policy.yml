@@ -1,0 +1,267 @@
+# CGJR research source policy: which external publications the AI Report may
+# cite, and how much research it may do per report section.
+#
+# Read and checked by load_source_policy() (R/source_policy.R). The journal
+# identifiers come from OpenAlex via data-raw/source_policy_journals.R - re-run
+# that script rather than typing ISSNs or ids by hand. A journal is matched by
+# ISSN or OpenAlex id, never by its name.
+
+tiers:
+  - tier: 1
+    name: World Bank Group publications
+    use: Preferred for country diagnostics, institutional analysis and applied policy evidence.
+  - tier: 2
+    name: Other international organizations
+    use: Eligible for consideration; the institution's standing is not acceptance of every claim.
+  - tier: 3
+    name: Peer-reviewed journals
+    use: Articles in a journal listed below.
+  - tier: 4
+    name: Official national sources
+    use: Statements of policy or law; not by themselves evidence that a policy was implemented or worked.
+  - tier: 5
+    name: Other credible research
+    use: Working papers from the series listed below, always labelled as not peer reviewed.
+
+# Publishers of reports and working papers in tiers 1 and 2. `domains` are the
+# official web domains (subdomains included) their documents are served from.
+institutions:
+  - code: WBG
+    name: World Bank Group
+    tier: 1
+    domains: [worldbank.org, worldbankgroup.org, ifc.org, miga.org]
+  - code: IMF
+    name: International Monetary Fund
+    tier: 2
+    domains: [imf.org]
+  - code: OECD
+    name: Organisation for Economic Co-operation and Development
+    tier: 2
+    domains: [oecd.org, oecd-ilibrary.org]
+  - code: ILO
+    name: International Labour Organization
+    tier: 2
+    domains: [ilo.org]
+  - code: UNDP
+    name: United Nations Development Programme
+    tier: 2
+    domains: [undp.org]
+  - code: UNCTAD
+    name: United Nations Conference on Trade and Development
+    tier: 2
+    domains: [unctad.org]
+  - code: UNDESA
+    name: United Nations Department of Economic and Social Affairs
+    tier: 2
+    domains: [un.org]
+  - code: AfDB
+    name: African Development Bank
+    tier: 2
+    domains: [afdb.org]
+  - code: ADB
+    name: Asian Development Bank
+    tier: 2
+    domains: [adb.org]
+  - code: IDB
+    name: Inter-American Development Bank
+    tier: 2
+    domains: [iadb.org]
+  - code: EBRD
+    name: European Bank for Reconstruction and Development
+    tier: 2
+    domains: [ebrd.com]
+
+# Working-paper series accepted in tier 5.
+series:
+  - id: nber_wp
+    name: NBER Working Paper
+    publisher: National Bureau of Economic Research
+    domains: [nber.org]
+  - id: cepr_dp
+    name: CEPR Discussion Paper
+    publisher: Centre for Economic Policy Research
+    domains: [cepr.org]
+  - id: iza_dp
+    name: IZA Discussion Paper
+    publisher: IZA Institute of Labor Economics
+    domains: [iza.org]
+
+# Preferred journals (tier 3). status: preferred | excluded.
+journals:
+  - id: jde
+    title: "Journal of Development Economics"
+    openalex_id: S101209419
+    issn: [0304-3878, 1872-6089]
+    publisher: "Elsevier BV"
+    area: development_economics
+    status: preferred
+  - id: world_dev
+    title: "World Development"
+    openalex_id: S85457386
+    issn: [0305-750X, 1873-5991]
+    publisher: "Elsevier BV"
+    area: development_economics
+    status: preferred
+  - id: jeg
+    title: "Journal of Economic Growth"
+    openalex_id: S181171746
+    issn: [1381-4338, 1573-7020]
+    publisher: "Springer Science+Business Media"
+    area: development_economics
+    status: preferred
+  - id: edcc
+    title: "Economic Development and Cultural Change"
+    openalex_id: S71670289
+    issn: [0013-0079, 1539-2988]
+    publisher: "University of Chicago Press"
+    area: development_economics
+    status: preferred
+  - id: aer
+    title: "American Economic Review"
+    openalex_id: S23254222
+    issn: [0002-8282, 1944-7981]
+    publisher: "American Economic Association"
+    area: economics_public_policy
+    status: preferred
+  - id: qje
+    title: "Quarterly Journal of Economics"
+    openalex_id: S203860005
+    issn: [0033-5533, 1531-4650]
+    publisher: "Oxford University Press"
+    area: economics_public_policy
+    status: preferred
+  - id: jpe
+    title: "Journal of Political Economy"
+    openalex_id: S95323914
+    issn: [0022-3808, 1537-534X]
+    publisher: "University of Chicago Press"
+    area: economics_public_policy
+    status: preferred
+  - id: restud
+    title: "Review of Economic Studies"
+    openalex_id: S88935262
+    issn: [0034-6527, 1467-937X]
+    publisher: "Oxford University Press"
+    area: economics_public_policy
+    status: preferred
+  - id: ecta
+    title: "Econometrica"
+    openalex_id: S95464858
+    issn: [0012-9682, 1468-0262]
+    publisher: "Wiley"
+    area: economics_public_policy
+    status: preferred
+  - id: aej_applied
+    title: "American Economic Journal: Applied Economics"
+    openalex_id: S42893225
+    issn: [1945-7782, 1945-7790]
+    publisher: "American Economic Association"
+    area: economics_public_policy
+    status: preferred
+  - id: jpube
+    title: "Journal of Public Economics"
+    openalex_id: S199447588
+    issn: [0047-2727, 1879-2316]
+    publisher: "Elsevier BV"
+    area: economics_public_policy
+    status: preferred
+  - id: restat
+    title: "Review of Economics and Statistics"
+    openalex_id: S180061323
+    issn: [0034-6535, 1530-9142]
+    publisher: "The MIT Press"
+    area: economics_public_policy
+    status: preferred
+  - id: jleo
+    title: "Journal of Law, Economics, and Organization"
+    openalex_id: S4210168091
+    issn: [1465-7341, 8756-6222]
+    publisher: "Oxford University Press"
+    area: institutions_governance
+    status: preferred
+  - id: governance
+    title: "Governance"
+    openalex_id: S62375027
+    issn: [0952-1895, 1468-0491]
+    publisher: "Wiley"
+    area: institutions_governance
+    status: preferred
+  - id: par
+    title: "Public Administration Review"
+    openalex_id: S76877748
+    issn: [0033-3352, 1540-6210]
+    publisher: "Wiley"
+    area: institutions_governance
+    status: preferred
+  - id: jpart
+    title: "Journal of Public Administration Research and Theory"
+    openalex_id: S169433491
+    issn: [1053-1858, 1477-9803]
+    publisher: "Oxford University Press"
+    area: institutions_governance
+    status: preferred
+  - id: wber
+    title: "World Bank Economic Review"
+    openalex_id: S2735890421
+    issn: [0258-6770, 1564-698X]
+    publisher: "Oxford University Press"
+    area: development_economics
+    status: preferred
+  - id: wbro
+    title: "World Bank Research Observer"
+    openalex_id: S117685085
+    issn: [0257-3032, 1564-6971]
+    publisher: "Oxford University Press"
+    area: development_economics
+    status: preferred
+
+# How to search. Queries are built only from these terms, the section's
+# taxonomy label, the country name and the dashboard's indicator names -
+# never from the guidance note. `terms` are keyed by report section (leaf);
+# a section without terms is searched by its label alone.
+search:
+  # World Bank Documents & Reports major document types worth reading
+  # (project paperwork - procurement plans, safeguards - is left out)
+  wb_document_groups: ["Publications & Research", "Economic & Sector Work", "Country Focus"]
+  languages: [English]
+  # mAI web search is limited to these sites: document repositories whose
+  # links resolve to records (whole institution domains mostly return news
+  # and project pages)
+  mai_sites: [documents.worldbank.org, openknowledge.worldbank.org]
+  terms:
+    degree_of_integrity: [corruption, anti-corruption]
+    transparency_and_accountability: [transparency, accountability, access to information]
+    justice_and_rule_of_law: [judiciary, rule of law, contract enforcement]
+    budget_cycle_and_fiscal_planning: [public financial management, budget, fiscal planning]
+    domestic_revenue_mobilization: [tax administration, revenue mobilization]
+    public_procurement: [public procurement]
+    public_investment_management: [public investment management]
+    public_sector_hrm: [civil service, public employment]
+    digital_and_data: [digital government, e-government]
+    market_regulatory_institutions: [regulation, competition policy, business environment]
+    service_delivery: [public service delivery]
+    soe_governance: [state-owned enterprises]
+    political_institutions_and_social_cohesion: [political institutions, checks and balances]
+    social_cohesion_norms_and_cooperation: [social cohesion, trust]
+
+# Research effort per report section, and network bounds.
+limits:
+  max_candidates_per_leaf: 10
+  # sources selected per section: institutional publications (tiers 1, 2,
+  # 4, 5) and peer-reviewed articles (tier 3) each have their own places
+  max_institutional_per_leaf: 6
+  max_peer_reviewed_per_leaf: 4
+  # passages of each selected source passed on (the most relevant first)
+  passages_per_source: 5
+  # findings stated per selected source, and per report section
+  max_findings_per_source: 3
+  max_findings_per_leaf: 20
+  request_timeout_s: 20
+  max_redirects: 5
+  max_pdf_mb: 50
+  # research results (searches, DOI records) are reused for this long
+  cache_days: 30
+  # relevance screening: at most this many candidates per section in one
+  # LLM call, and publications this recent rank first among equals
+  max_screened_per_leaf: 30
+  prefer_recent_years: 15

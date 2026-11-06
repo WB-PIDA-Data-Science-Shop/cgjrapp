@@ -4,7 +4,13 @@
 \alias{verify_text}
 \title{Verify citations and figures in LLM text}
 \usage{
-verify_text(text, evidence = NULL, guidance = NULL, expected_sections = NULL)
+verify_text(
+  text,
+  evidence = NULL,
+  guidance = NULL,
+  expected_sections = NULL,
+  research = NULL
+)
 }
 \arguments{
 \item{text}{Character scalar - the model's Markdown (report or chat reply).}
@@ -15,13 +21,20 @@ verify_text(text, evidence = NULL, guidance = NULL, expected_sections = NULL)
 
 \item{expected_sections}{Report section keys that must appear as
 \verb{[[section:key]]} markers (\code{NULL} for chat).}
+
+\item{research}{\code{NULL}, or the research pack the text was written from:
+a list with \code{findings} (\code{id} such as \code{"S3.2"}, \code{finding}, \code{quote},
+\code{claim_type}, \code{scope}) and \code{sources} (\code{authors}, a list column, and
+\code{year}).}
 }
 \value{
 A list: \code{issues} (data frame: \code{section}, \code{type}, \code{detail},
 \code{sentence}; types \code{unknown_evidence_id}, \code{unknown_guidance_id},
-\code{figure_not_supported}, \code{uncited_figure}, \code{external_reference},
-\code{missing_section}) and \code{cited} (data frame: \code{id}, \code{source} -
-\code{"evidence"}/\code{"guidance"}, \code{found}).
+\code{unknown_research_id}, \code{figure_not_supported}, \code{uncited_figure},
+\code{causal_claim_unsupported}, \code{scope_misstated}, \code{external_reference},
+\code{missing_section})
+and \code{cited} (data frame: \code{id}, \code{source} - \code{"evidence"}/\code{"guidance"}/
+\code{"research"}, \code{found}).
 }
 \description{
 Verify citations and figures in LLM text

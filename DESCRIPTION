@@ -21,6 +21,7 @@ Imports:
     commonmark,
     countrycode,
     coro,
+    curl,
     DT,
     dplyr,
     ellmer,
@@ -30,7 +31,9 @@ Imports:
     httr2,
     jsonlite,
     later,
+    mirai,
     officer,
+    pdftools,
     plotly,
     promises,
     purrr,
@@ -41,10 +44,10 @@ Imports:
     shinyWidgets,
     stats,
     thematic,
-    tools
+    tools,
+    yaml
 Suggests:
     devtools,
-    pdftools,
     pkgload,
     testthat (>= 3.0.0),
     tibble,

@@ -17,3 +17,4 @@
 ^data-raw$
 ^inst/docs$
 ^\.plans$
+^docs$

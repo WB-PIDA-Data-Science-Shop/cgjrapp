@@ -1,0 +1,34 @@
+{
+ "rows": 1,
+ "os": 0,
+ "page": 1,
+ "total": 1,
+ "documents": {
+  "D30484941": {
+   "id": "30484941",
+   "count": "Ghana",
+   "docna": {
+    "0": {
+     "docna": "Ghana - Public Sector Reform for Results Project"
+    }
+   },
+   "docty": "Project Appraisal Document",
+   "lang": "English",
+   "entityids": {
+    "entityid": "090224b0864d76a9_2_0"
+   },
+   "repnb": "PAD2602",
+   "docdt": "2018-10-01T04:00:00Z",
+   "majdocty": "Project Documents",
+   "abstracts": {
+    "cdata!": "The development objective of the Public Sector Reform for Results Project for Ghana is to improve efficiency and accountability in the delivery of selected services by selected entities. The project comprises of four components. The first component, strengthening organizational performance addresses two key problems relating to organizational performance: (i) low levels of organizational performan"
+   },
+   "display_title": "Ghana - Public Sector Reform for Results Project",
+   "pdfurl": "http://documents.worldbank.org/curated/en/758341540692513115/pdf/ghana-pad-10032018-636762749065203646.pdf",
+   "txturl": "http://documents.worldbank.org/curated/en/758341540692513115/text/ghana-pad-10032018-636762749065203646.txt",
+   "projectid": "P164665",
+   "guid": "758341540692513115",
+   "url": "http://documents.worldbank.org/curated/en/758341540692513115"
+  }
+ }
+}

@@ -11,7 +11,8 @@ mod_report_server(
   threshold,
   year_range,
   chat_factory = llm_chat,
-  guidance = NULL
+  guidance = NULL,
+  research_fun = NULL
 )
 }
 \arguments{
@@ -26,10 +27,21 @@ a seam for tests.}
 
 \item{guidance}{Output of \code{\link[=load_guidance]{load_guidance()}} (default: loaded per
 \code{CGJR_GUIDANCE_SOURCE}).}
+
+\item{research_fun}{Function \verb{(leaf, evidence, policy)} researching one
+report section: a value or a promise of it. The default runs the
+research in a background R process (mirai), so the session stays
+responsive; a seam for tests.}
 }
 \value{
 Invisibly \code{NULL}.
 }
 \description{
-AI Report tab server
+Writes the AI Report (and runs its chat) for the applied selection. With
+"Use published research" ticked, the selected scope's sections are
+researched one after another in the background (a new selection replaces
+what is still queued), kept per country and depth for the session; a
+report waits only for its own sections, which go to the front. The Research sources tab lists what was found and used;
+excluding a source there (for that country, for the session) offers to
+rewrite just the parts of the report that cite it.
 }

@@ -4,7 +4,14 @@
 \alias{plan_ai_report}
 \title{Plan the LLM calls for an AI Report}
 \usage{
-plan_ai_report(evidence, guidance, scope = "chapter")
+plan_ai_report(
+  evidence,
+  guidance,
+  scope = "chapter",
+  research = NULL,
+  format = c("structured", "narrative"),
+  focus = NULL
+)
 }
 \arguments{
 \item{evidence}{Output of \code{\link[=build_evidence]{build_evidence()}}, built for the scope's
@@ -14,10 +21,27 @@ clusters (all of them for the full chapter).}
 
 \item{scope}{\code{"chapter"}, \code{"cluster:<key>"} or \code{"leaf:<key>"} (see
 \code{\link[=report_scope_choices]{report_scope_choices()}}).}
+
+\item{research}{\code{NULL} (no research: the plan is the dashboard-and-guidance
+draft), or a research pack: a list whose \code{findings} data frame has \code{id}
+(e.g. \code{"S3.2"}), \code{leaf} and \code{line} (the finding as the writer sees it).
+Each section's call then carries its own findings, and the rules for
+citing them.}
+
+\item{format}{\code{"structured"} (each section under three fixed subheadings:
+what the data show, why it matters, questions for the country team) or
+\code{"narrative"} (prose as a published CGJR reads: the scope's top three
+priority areas in depth with their own recommendations, other areas in a
+paragraph, a closing synthesis by pillar, and each section's questions
+under its own \verb{questions_<leaf>} marker, for an annex).}
+
+\item{focus}{Optional text from the team on what to emphasise; it reaches
+every call as an instruction, never as a source. \code{NULL} or blank: none.}
 }
 \value{
-A list: \code{scope}, \code{sections} (data frame \code{key}, \code{title}, in display
-order) and \code{calls} (list of \code{list(id, label, keys, prompt = list(system, user))}).
+A list: \code{scope}, \code{format}, \code{focus}, \code{sections} (data frame \code{key},
+\code{title}, in display order; in the narrative format the \code{questions_}
+sections last) and \code{calls} (list of \code{list(id, label, keys, prompt = list(system, user))}).
 }
 \description{
 Plan the LLM calls for an AI Report
