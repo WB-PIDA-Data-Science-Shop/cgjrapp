@@ -91,14 +91,37 @@ test_that("deploy_app(new = TRUE) creates the content and reports its GUID", {
   seen <- NULL
   local_mocked_bindings(deployApp = function(...) { seen <<- list(...); invisible(TRUE) },
                         .package = "rsconnect")
-  local_mocked_bindings(deployments = function(...) data.frame(
-    name = c("cgjrapp-dev", "other"),
-    url = c("https://datanalytics-int.worldbank.org/content/0a1b2c3d-1111-2222-3333-444455556666/",
-            "https://datanalytics-int.worldbank.org/content/ffffffff-1111-2222-3333-444455556666/")),
-    .package = "rsconnect")
+  record_path <- NULL
+  # rsconnect files the record of a single-file deploy under the entry file,
+  # not app_dir: deployments() must be asked about that file.
+  local_mocked_bindings(deployments = function(appPath, ...) {
+    record_path <<- appPath
+    data.frame(
+      name = c("cgjrapp-dev", "other"),
+      url = c("https://datanalytics-int.worldbank.org/content/0a1b2c3d-1111-2222-3333-444455556666/",
+              "https://datanalytics-int.worldbank.org/content/ffffffff-1111-2222-3333-444455556666/"))
+  }, .package = "rsconnect")
   withr::local_envvar(cgjrapp_dev_guid = NA)
   expect_message(deploy_app(type = "dev", new = TRUE, app_dir = dir),
                  "cgjrapp_dev_guid=0a1b2c3d-1111-2222-3333-444455556666", fixed = TRUE)
+  expect_identical(record_path, file.path(dir, "inst/app/cgjrapp_app.R"))
   expect_null(seen$appId)
   expect_identical(seen$appName, "cgjrapp-dev")
+})
+
+test_that("deploy_app() stops when Connect fails to build, still reporting a new GUID", {
+  dir <- local_app_dir()
+  withr::local_envvar(cgjrapp_dev_guid = "g-dev")
+  local_mocked_bindings(deployApp = function(...) invisible(FALSE), .package = "rsconnect")
+  expect_error(deploy_app(type = "dev", app_dir = dir), "failed", fixed = TRUE)
+
+  withr::local_envvar(cgjrapp_dev_guid = NA)
+  local_mocked_bindings(deployments = function(...) data.frame(
+    name = "cgjrapp-dev",
+    url = "https://datanalytics-int.worldbank.org/content/0a1b2c3d-1111-2222-3333-444455556666/"),
+    .package = "rsconnect")
+  expect_error(
+    expect_message(deploy_app(type = "dev", new = TRUE, app_dir = dir),
+                   "cgjrapp_dev_guid=0a1b2c3d-1111-2222-3333-444455556666", fixed = TRUE),
+    "deploy_app(type = \"dev\")", fixed = TRUE)
 })

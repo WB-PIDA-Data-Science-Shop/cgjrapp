@@ -36,7 +36,8 @@ prompt on redeploys.}
 call (passed on to \code{\link[shiny:shinyApp]{shiny::shinyApp()}}).}
 }
 \value{
-The value of \code{\link[rsconnect:deployApp]{rsconnect::deployApp()}}, invisibly.
+\code{TRUE}, invisibly. Stops if Connect fails to build or start the
+content (after printing a new slot's GUID: the content was created).
 }
 \description{
 Regenerates the entry file (\code{inst/app/cgjrapp_app.R}), lists the files to

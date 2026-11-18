@@ -97,7 +97,8 @@ write_deploy_entrypoint <- function(path, ...) {
 #' @param app_dir The package's source directory.
 #' @param ... Named arguments written into the entry file's `run_cgjrapp()`
 #'   call (passed on to [shiny::shinyApp()]).
-#' @return The value of [rsconnect::deployApp()], invisibly.
+#' @return `TRUE`, invisibly. Stops if Connect fails to build or start the
+#'   content (after printing a new slot's GUID: the content was created).
 #' @examples
 #' \dontrun{
 #' # First deploy of a slot: creates the content and prints its GUID
@@ -139,18 +140,26 @@ deploy_app <- function(type = c("dev", "prod"), new = FALSE,
     appPrimaryDoc = primary_doc,
     appId         = if (!new) guid,
     appName       = if (new) app_name,
-    appTitle      = if (new) paste0("GOVCGJR Benchmarking Dashboard", if (type == "dev") " (dev)"),
+    appTitle      = app_name,
     server        = server,
     forceUpdate   = forceUpdate
   )
-  if (new) .report_new_guid(app_dir, server, app_name, guid_var)
+  # The content exists once created, even if Connect then fails to build it:
+  # report its GUID either way, so a retry redeploys rather than duplicates.
+  if (new) .report_new_guid(file.path(app_dir, primary_doc), server, app_name, guid_var)
+  if (!isTRUE(out)) {
+    stop("Deployment to ", type, " failed: see the Connect log above. Fix the cause, then ",
+         "redeploy with deploy_app(type = \"", type, "\").", call. = FALSE)
+  }
   invisible(out)
 }
 
 # After a first deploy: the new content's GUID, from rsconnect's deployment
-# record, as the line to add to .Renviron.
-.report_new_guid <- function(app_dir, server, app_name, guid_var) {
-  d <- rsconnect::deployments(app_dir, serverFilter = server)
+# record, as the line to add to .Renviron. rsconnect files the record of a
+# single-file deploy under that file (inst/app/rsconnect/documents/...), so
+# `record_path` is the entry file, not the app directory.
+.report_new_guid <- function(record_path, server, app_name, guid_var) {
+  d <- rsconnect::deployments(record_path, serverFilter = server)
   url <- d$url[d$name == app_name]
   guid <- regmatches(url, regexpr("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", url))
   if (length(guid) == 1L) {
