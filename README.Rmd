@@ -154,6 +154,50 @@ the only branching subcluster). The exact names, ordering and nesting are read
 from `cgjrdata::cgjr_taxonomy` — nothing is hardcoded in the app, so a change
 to the taxonomy is reflected with no code change.
 
+## Deployment
+
+The app is deployed to Posit Connect (`datanalytics-int.worldbank.org`) with
+`deploy_app()`, the same way as `cliarappak`. It writes the entry file Connect
+runs (`inst/app/cgjrapp_app.R`, which loads the package from the bundle with
+`pkgload::load_all()`), lists the files to bundle, checks them, and publishes
+them with `rsconnect::deployApp()`.
+
+There are two slots, `dev` and `prod`. Each one's Content GUID is read from
+your `.Renviron` (never committed):
+
+```
+cgjrapp_dev_guid=<Content GUID of the dev app>
+cgjrapp_prod_guid=<Content GUID of the prod app>
+```
+
+``` r
+# Once per slot: create the content on Connect; prints the GUID to add above
+deploy_app(type = "dev", new = TRUE)
+
+# Every later deploy
+deploy_app(type = "dev")
+deploy_app(type = "prod")
+```
+
+Your rsconnect account for the server must be registered
+(`rsconnect::accounts()`; add one with `rsconnect::connectApiUser()`).
+
+**What is bundled.** The package source, `inst/` and the guidance passages
+(`inst/docs/guidance_passages.rds` and its embeddings). Never bundled: the
+guidance note itself (the PDF in `inst/docs/`), `data-raw/`, `.plans/`,
+`copilot_logs/`, `prompts/`, `tests/`, `renv/` and any `.Renviron`.
+`.rscignore` excludes them, and `deploy_app()` stops if one gets through.
+`renv.lock` is not bundled either: rsconnect records the packages installed in
+your library, so run `renv::restore()` before deploying.
+
+**Settings on Connect.** Set the `CGJR_*` variables in the content's *Vars*
+panel; your local values do not apply there. Until the app can authenticate
+to mAI through Connect's mAI Factory OAuth integration (pending the ACN), leave
+the `CGJR_LLM_*` variables unset on Connect: the dashboard works, and the AI
+Report and Chat say the AI service cannot be reached. Do not set
+`CGJR_LLM_PROVIDER=mai` there: desktop tokens are for local proof-of-concept
+work only.
+
 ## Development
 
 ``` r

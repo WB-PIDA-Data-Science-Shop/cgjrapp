@@ -9,6 +9,9 @@
 ^dev$
 ^REMODEL_PLAN\.md$
 ^rsconnect$
+^\.rscignore$
+^R/_disable_autoload\.R$
+^inst/app$
 ^\.vscode$
 
 ^LICENSE\.md$
