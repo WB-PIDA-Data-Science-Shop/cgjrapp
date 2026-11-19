@@ -79,17 +79,12 @@
   is.null(fa) || is.null(fb) || isTRUE(fa == fb)
 }
 
-# Accents off (an accented "u" becomes "u", and so on) for comparisons. Transliteration
-# depends on the locale: where it fails (NA, or "?" for a letter, as in a C
-# locale on a server), the non-ASCII letters are dropped instead.
+# Accents off (an accented "u" becomes "u", a sharp s becomes "ss", and so on) for
+# comparisons. ICU's Latin-ASCII rules, not iconv: iconv's transliteration
+# depends on the platform (macOS gives "\"u" for an umlaut, a C locale gives
+# "?"). Letters with no ASCII form (other scripts) are dropped.
 .fold <- function(x) {
-  y <- suppressWarnings(iconv(x, "UTF-8", "ASCII//TRANSLIT"))
-  # more "?" than the original had: letters were lost (a title may itself
-  # ask a question)
-  marks <- function(s) lengths(regmatches(s, gregexpr("?", s, fixed = TRUE)))
-  failed <- is.na(y) | marks(y) > marks(x)
-  y[failed] <- gsub("[^\\x01-\\x7F]", "", x[failed], perl = TRUE)
-  y
+  gsub("[^\\x01-\\x7F]", "", stringi::stri_trans_general(x, "Latin-ASCII"), perl = TRUE)
 }
 
 .crossref_row <- function(doi, res) {

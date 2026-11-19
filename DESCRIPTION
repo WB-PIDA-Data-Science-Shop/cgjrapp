@@ -43,6 +43,7 @@ Imports:
     shinychat (>= 0.5.0),
     shinyWidgets,
     stats,
+    stringi,
     thematic,
     tools,
     yaml

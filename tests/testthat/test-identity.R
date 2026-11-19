@@ -117,11 +117,11 @@ test_that("providers that disagreed about a record leave it in conflict", {
   expect_identical(v$identity, "conflict")
 })
 
-test_that("accents are folded even where the locale cannot transliterate", {
+test_that("accents are folded the same way on every platform", {
+  # macOS's iconv gave "J\"urgen Ren'e" here
   expect_identical(cgjrapp:::.fold(c("Jürgen René", "Côte d'Ivoire", "plain")),
                    c("Jurgen Rene", "Cote d'Ivoire", "plain"))
-  # a C locale makes iconv give "?" for letters: they are dropped, not kept as "?"
-  testthat::local_mocked_bindings(iconv = function(x, ...) gsub("[^\\x01-\\x7F]", "?", x, perl = TRUE),
-                                  .package = "base")
-  expect_identical(cgjrapp:::.fold("Jürgen?"), "Jrgen?")
+  expect_identical(cgjrapp:::.fold("Straße Øster Łódź"), "Strasse Oster Lodz")
+  # letters with no ASCII form are dropped; a "?" of the text itself is kept
+  expect_identical(cgjrapp:::.fold("日本 title?"), " title?")
 })
