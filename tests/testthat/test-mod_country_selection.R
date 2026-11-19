@@ -1,23 +1,38 @@
 # Slice 3 - the comparator selection module.
 
-test_that(".unit_choices groups every cgjr_ctf unit by level", {
+test_that(".unit_choices: countries from cgjr_ctf, regions and income groups from wbcountries", {
   ch <- cgjrapp:::.unit_choices()
   expect_named(ch, c("Countries", "Regions", "Income groups"))
   expect_true("GHA" %in% unname(ch$Countries))
+  expect_identical(names(ch$Countries), sort(names(ch$Countries)))
   expect_setequal(unname(ch$Regions),
                   c("AFE", "AFW", "EAP", "ECA", "LAC", "MENAAP", "NAC", "SAR"))
-  expect_length(ch[["Income groups"]], 4L)
-  # every WB-aggregate "country" row (AFE, NAC, EAS, HIC, OED, ...) is dropped
-  # from Countries - only real countries remain
-  aggs <- unique(cliaretl::wb_country_list$group_code)
-  expect_false(any(aggs %in% unname(ch$Countries)))
-  expect_true(all(unname(ch$Countries) %in% cliaretl::wb_country_list$country_code))
+  # income groups are offered by label, which is what .expand_to_countries() takes
+  expect_identical(unname(ch[["Income groups"]]),
+                   c("High income", "Low income", "Lower middle income",
+                     "Upper middle income"))
+  # Countries are real countries only (no WB aggregates such as AFE or HIC)
+  expect_true(all(unname(ch$Countries) %in% cgjrdata::wbcountries$country_code))
   expect_length(ch$Countries, 216L)
 })
 
-test_that(".expand_to_countries drops leaked aggregate 'country' rows", {
+test_that(".country_codes lists real countries, never WB aggregates", {
+  codes <- cgjrapp:::.country_codes()
+  expect_true("GHA" %in% codes)
+  expect_false(any(c("AFE", "HIC", "EAS", "OED", "WLD") %in% codes))
+})
+
+test_that(".expand_to_countries drops codes that are neither a country nor a group", {
   got <- cgjrapp:::.expand_to_countries(c("HIC", "EAS", "OED"))
   expect_length(got, 0L)
+  expect_length(cgjrapp:::.expand_to_countries(character(0)), 0L)
+})
+
+test_that(".year_bounds spans the dynamic years and ignores static rows", {
+  ctf <- tibble::tibble(ctf_type = c("dynamic", "dynamic", "static"),
+                        year     = c(2019L, 2015L, NA))
+  expect_identical(cgjrapp:::.year_bounds(ctf), c(2015L, 2019L))
+  expect_type(cgjrapp:::.year_bounds(), "integer")
 })
 
 test_that(".default_comparators returns the base country's region-mates", {
@@ -43,16 +58,16 @@ test_that(".expand_to_countries swaps a region code for its member countries", {
   expect_false("AFE" %in% got)   # the region code itself is never kept
 })
 
-test_that(".expand_to_countries swaps an income-group slug for its member countries (matched on label, not slug)", {
+test_that(".expand_to_countries swaps an income-group label for its member countries", {
   wb <- cgjrdata::wbcountries
   expected <- wb$country_code[!is.na(wb$income_group) & wb$income_group == "High income"]
-  got <- cgjrapp:::.expand_to_countries("high_income")
+  got <- cgjrapp:::.expand_to_countries("High income")
   expect_gt(length(got), 5L)
   expect_setequal(got, expected)
 })
 
 test_that(".expand_to_countries unions a mix of countries, a region and an income group", {
-  got <- cgjrapp:::.expand_to_countries(c("GHA", "AFE", "high_income"))
+  got <- cgjrapp:::.expand_to_countries(c("GHA", "AFE", "High income"))
   wb <- cgjrdata::wbcountries
   expect_true("GHA" %in% got)
   expect_true(all(wb$country_code[!is.na(wb$region_code) & wb$region_code == "AFE"] %in% got))
@@ -113,7 +128,7 @@ test_that("applied state holds the default selection before any Apply click", {
     expect_identical(sel$base_unit(), "GHA")
     expect_setequal(sel$comparison_units(), cgjrapp:::.default_comparators("GHA"))
     expect_identical(sel$threshold(), "Default")
-    expect_equal(sel$year_range(), c(2013L, 2024L))
+    expect_equal(sel$year_range(), cgjrapp:::.year_bounds())
   })
 })
 

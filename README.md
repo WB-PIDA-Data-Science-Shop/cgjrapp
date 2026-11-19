@@ -12,30 +12,29 @@ coverage](https://codecov.io/gh/WB-PIDA-Data-Science-Shop/cgjrapp/graph/badge.sv
 
 `cgjrapp` is the Shiny dashboard for the institutional chapter of the
 World Bank’s **Country Jobs and Growth Report (CGJR)**. It benchmarks a
-country, region or income group against a chosen comparison group across
-the CGJR governance taxonomy, using Closeness-to-Frontier (CTF)
-indicator data from the companion
+country against a chosen group of comparator countries across the CGJR
+governance taxonomy, using Closeness-to-Frontier (CTF) indicator data
+from the companion
 [`cgjrdata`](https://github.com/WB-PIDA-Data-Science-Shop/cgjrdata)
 package.
 
 ## What it does
 
-- **Sidebar selection.** Pick a base unit and a comparison group —
-  countries, WB regions and income groups are all selectable together.
-  Choose the benchmarking thresholds (quartiles or terciles) and a year
-  range, then *Apply*.
+- **Sidebar selection.** Pick a base country and its comparators — pick
+  countries one by one, or a WB region or income group to add all its
+  member countries at once. Choose the benchmarking thresholds
+  (quartiles or terciles) and a year range, then *Apply*.
 - **Benchmarking tab.** A nested accordion generated from
   `cgjr_taxonomy` (cluster → subcluster → sub-subcluster). Each leaf
   card shows the base unit’s indicators against the comparison group,
   coloured Weak / Emerging / Strong, plus a **live composite score**.
   Static (latest snapshot) or Dynamic (over time, even years).
-- **Data tab.** Download the live composite scores, the precomputed
-  `cgjr_scores` reference (a *different* calculation, labelled as such),
-  the indicator-level CTF and raw values, and the full indicator
-  catalogue.
+- **Data tab.** Download the indicator-level CTF and raw values for the
+  selection, and the full indicator catalogue.
 - **AI Report tab.** Draft the governance chapter, or one cluster or
-  section of it, following the CGJR guidance note, and ask questions in the
-  Chat. Every citation and figure is checked automatically (see below).
+  section of it, following the CGJR guidance note, and ask questions in
+  the Chat. Every citation and figure is checked automatically (see
+  below).
 
 Composite scores are **computed live for the chosen comparison group** —
 a deliberate port of the CLIAR methodology (`def_quantiles()` /
@@ -68,77 +67,77 @@ run_cgjrapp()
 
 ## AI Report and Chat
 
-The **AI Report** tab drafts the governance chapter (the full chapter, one
-cluster, or one section) from the CGJR guidance note, in one of two formats:
+The **AI Report** tab drafts the governance chapter (the full chapter,
+one cluster, or one section) from the CGJR guidance note, in one of two
+formats:
 
-- **Structured**: each area under three fixed headings (what the data show,
-  why it matters for growth and jobs, questions for the country team), then
-  possible recommendations.
-- **Narrative**: prose as a published CGJR reads. As the guidance asks, the
-  top three priority areas are treated in depth, each with its own
-  recommendations; other areas get a paragraph; a closing synthesis groups the
-  recommendations by pillar, with sequencing; the guidance's diagnostic
-  questions go to an annex, "Questions for further analysis".
+- **Structured**: each area under three fixed headings (what the data
+  show, why it matters for growth and jobs, questions for the country
+  team), then possible recommendations.
+- **Narrative**: prose as a published CGJR reads. As the guidance asks,
+  the top three priority areas are treated in depth, each with its own
+  recommendations; other areas get a paragraph; a closing synthesis
+  groups the recommendations by pillar, with sequencing; the guidance’s
+  diagnostic questions go to an annex, “Questions for further analysis”.
 
-An optional *focus for this draft* steers what the report emphasises; it is an
-instruction, never a source. The **Chat** sub-tab answers questions from the
-guidance and the applied selection's data.
+An optional *focus for this draft* steers what the report emphasises; it
+is an instruction, never a source. The **Chat** sub-tab answers
+questions from the guidance and the applied selection’s data.
 
-Every figure comes from the dashboard's evidence pack and is cited `[E12]`;
-every guidance-derived statement cites a passage `[G1.2-3]`. The app then
-checks the text itself (`verify_text()`): cited ids must exist, figures must
-match the facts they cite, and studies must be in the guidance's reference
-list. In the chat, anything from outside the sources has to sit under a
-"Beyond the guidance (general knowledge, not verified)" heading. Hover a
-citation to see its source.
+Every figure comes from the dashboard’s evidence pack and is cited
+`[E12]`; every guidance-derived statement cites a passage `[G1.2-3]`.
+The app then checks the text itself (`verify_text()`): cited ids must
+exist, figures must match the facts they cite, and studies must be in
+the guidance’s reference list. In the chat, anything from outside the
+sources has to sit under a “Beyond the guidance (general knowledge, not
+verified)” heading. Hover a citation to see its source.
 
 ### Configuring the LLM
 
-The provider is set by environment variables. Put them in your user-level
-`~/.Renviron` (never a file inside the repo), or in the Posit Connect
-environment panel:
+The provider is set by environment variables. Put them in your
+user-level `~/.Renviron` (never a file inside the repo), or in the Posit
+Connect environment panel:
 
-```
-CGJR_LLM_BASE_URL=...   # an OpenAI-compatible endpoint
-CGJR_LLM_MODEL=...
-CGJR_LLM_API_KEY=...
-```
+    CGJR_LLM_BASE_URL=...   # an OpenAI-compatible endpoint
+    CGJR_LLM_MODEL=...
+    CGJR_LLM_API_KEY=...
 
-For testing, Google Gemini's free tier works through its OpenAI-compatible
-endpoint. Create a key at <https://aistudio.google.com/apikey>, then set:
+For testing, Google Gemini’s free tier works through its
+OpenAI-compatible endpoint. Create a key at
+<https://aistudio.google.com/apikey>, then set:
 
-```
-CGJR_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-CGJR_LLM_MODEL=gemini-2.5-flash
-CGJR_LLM_API_KEY=<your key>
-```
+    CGJR_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+    CGJR_LLM_MODEL=gemini-2.5-flash
+    CGJR_LLM_API_KEY=<your key>
 
-Gemini's free tier has a small daily quota per model (20 requests a day for
-the current Flash model in October 2026). A full chapter uses 6 requests,
-plus one per chat question; check your usage at <https://ai.dev/rate-limit>.
-Brief overloads (HTTP 503) and per-minute limits are retried automatically.
-If a run still fails part-way, **Resume** writes only the parts that are
-missing.
+Gemini’s free tier has a small daily quota per model (20 requests a day
+for the current Flash model in October 2026). A full chapter uses 6
+requests, plus one per chat question; check your usage at
+<https://ai.dev/rate-limit>. Brief overloads (HTTP 503) and per-minute
+limits are retried automatically. If a run still fails part-way,
+**Resume** writes only the parts that are missing.
 
-Switching to WBG mAI means changing these three variables; no code changes
-are needed.
+Switching to WBG mAI means changing these three variables; no code
+changes are needed.
 
 ### Which guidance the AI uses
 
-The guidance note is **Official Use Only**, so it is never committed, and by
-default it is never sent to an LLM. `CGJR_GUIDANCE_SOURCE` controls which
-guidance is used:
+The guidance note is **Official Use Only**, so it is never committed,
+and by default it is never sent to an LLM. `CGJR_GUIDANCE_SOURCE`
+controls which guidance is used:
 
-- `standin` (default): a synthetic stand-in with the same section structure
-  (`inst/guidance_standin/`). It is safe with any provider, and the tests use
-  it.
-- `real`: the guidance note itself. **Use this only with an approved endpoint
-  (WBG mAI).** Build its passages once with `data-raw/guidance_passages.R`
-  from the PDF in `inst/docs/` (gitignored). The resulting rds is deployed
-  with the app from your machine, or you can point `CGJR_GUIDANCE_PATH` at it.
+- `standin` (default): a synthetic stand-in with the same section
+  structure (`inst/guidance_standin/`). It is safe with any provider,
+  and the tests use it.
+- `real`: the guidance note itself. **Use this only with an approved
+  endpoint (WBG mAI).** Build its passages once with
+  `data-raw/guidance_passages.R` from the PDF in `inst/docs/`
+  (gitignored). The resulting rds is deployed with the app from your
+  machine, or you can point `CGJR_GUIDANCE_PATH` at it.
 
-A live smoke test against the configured provider runs only when you ask for
-it: `Sys.setenv(CGJR_LLM_LIVE_TEST = "true"); devtools::test(filter = "llm-live")`.
+A live smoke test against the configured provider runs only when you ask
+for it:
+`Sys.setenv(CGJR_LLM_LIVE_TEST = "true"); devtools::test(filter = "llm-live")`.
 
 ## The taxonomy
 
@@ -150,19 +149,17 @@ code change.
 
 ## Deployment
 
-The app is deployed to Posit Connect (`datanalytics-int.worldbank.org`) with
-`deploy_app()`, the same way as `cliarappak`. It writes the entry file Connect
-runs (`inst/app/cgjrapp_app.R`, which loads the package from the bundle with
-`pkgload::load_all()`), lists the files to bundle, checks them, and publishes
-them with `rsconnect::deployApp()`.
+The app is deployed to Posit Connect (`datanalytics-int.worldbank.org`)
+with `deploy_app()`, the same way as `cliarappak`. It writes the entry
+file Connect runs (`inst/app/cgjrapp_app.R`, which loads the package
+from the bundle with `pkgload::load_all()`), lists the files to bundle,
+checks them, and publishes them with `rsconnect::deployApp()`.
 
-There are two slots, `dev` and `prod`. Each one's Content GUID is read from
-your `.Renviron` (never committed):
+There are two slots, `dev` and `prod`. Each one’s Content GUID is read
+from your `.Renviron` (never committed):
 
-```
-cgjrapp_dev_guid=<Content GUID of the dev app>
-cgjrapp_prod_guid=<Content GUID of the prod app>
-```
+    cgjrapp_dev_guid=<Content GUID of the dev app>
+    cgjrapp_prod_guid=<Content GUID of the prod app>
 
 ``` r
 # Once per slot: create the content on Connect; prints the GUID to add above
@@ -176,21 +173,22 @@ deploy_app(type = "prod")
 Your rsconnect account for the server must be registered
 (`rsconnect::accounts()`; add one with `rsconnect::connectApiUser()`).
 
-**What is bundled.** The package source, `inst/` and the guidance passages
-(`inst/docs/guidance_passages.rds` and its embeddings). Never bundled: the
-guidance note itself (the PDF in `inst/docs/`), `data-raw/`, `.plans/`,
-`copilot_logs/`, `prompts/`, `tests/`, `renv/` and any `.Renviron`.
-`.rscignore` excludes them, and `deploy_app()` stops if one gets through.
-`renv.lock` is not bundled either: rsconnect records the packages installed in
-your library, so run `renv::restore()` before deploying.
+**What is bundled.** The package source, `inst/` and the guidance
+passages (`inst/docs/guidance_passages.rds` and its embeddings). Never
+bundled: the guidance note itself (the PDF in `inst/docs/`),
+`data-raw/`, `.plans/`, `copilot_logs/`, `prompts/`, `tests/`, `renv/`
+and any `.Renviron`. `.rscignore` excludes them, and `deploy_app()`
+stops if one gets through. `renv.lock` is not bundled either: rsconnect
+records the packages installed in your library, so run `renv::restore()`
+before deploying.
 
-**Settings on Connect.** Set the `CGJR_*` variables in the content's *Vars*
-panel; your local values do not apply there. Until the app can authenticate
-to mAI through Connect's mAI Factory OAuth integration (pending the ACN), leave
-the `CGJR_LLM_*` variables unset on Connect: the dashboard works, and the AI
-Report and Chat say the AI service cannot be reached. Do not set
-`CGJR_LLM_PROVIDER=mai` there: desktop tokens are for local proof-of-concept
-work only.
+**Settings on Connect.** Set the `CGJR_*` variables in the content’s
+*Vars* panel; your local values do not apply there. Until the app can
+authenticate to mAI through Connect’s mAI Factory OAuth integration
+(pending the ACN), leave the `CGJR_LLM_*` variables unset on Connect:
+the dashboard works, and the AI Report and Chat say the AI service
+cannot be reached. Do not set `CGJR_LLM_PROVIDER=mai` there: desktop
+tokens are for local proof-of-concept work only.
 
 ## Development
 

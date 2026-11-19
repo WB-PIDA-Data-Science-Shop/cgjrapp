@@ -21,16 +21,17 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 `cgjrapp` is the Shiny dashboard for the institutional chapter of the World
-Bank's **Country Jobs and Growth Report (CGJR)**. It benchmarks a country,
-region or income group against a chosen comparison group across the CGJR
-governance taxonomy, using Closeness-to-Frontier (CTF) indicator data from the
+Bank's **Country Jobs and Growth Report (CGJR)**. It benchmarks a country
+against a chosen group of comparator countries across the CGJR governance
+taxonomy, using Closeness-to-Frontier (CTF) indicator data from the
 companion [`cgjrdata`](https://github.com/WB-PIDA-Data-Science-Shop/cgjrdata)
 package.
 
 ## What it does
 
-- **Sidebar selection.** Pick a base unit and a comparison group — countries,
-  WB regions and income groups are all selectable together. Choose the
+- **Sidebar selection.** Pick a base country and its comparators — pick
+  countries one by one, or a WB region or income group to add all its member
+  countries at once. Choose the
   benchmarking thresholds (quartiles or terciles) and a year range, then
   *Apply*.
 - **Benchmarking tab.** A nested accordion generated from `cgjr_taxonomy`
@@ -38,9 +39,8 @@ package.
   unit's indicators against the comparison group, coloured Weak / Emerging /
   Strong, plus a **live composite score**. Static (latest snapshot) or
   Dynamic (over time, even years).
-- **Data tab.** Download the live composite scores, the precomputed
-  `cgjr_scores` reference (a *different* calculation, labelled as such), the
-  indicator-level CTF and raw values, and the full indicator catalogue.
+- **Data tab.** Download the indicator-level CTF and raw values for the
+  selection, and the full indicator catalogue.
 - **AI Report tab.** Draft the governance chapter, or one cluster or
   section of it, following the CGJR guidance note, and ask questions in the
   Chat. Every citation and figure is checked automatically (see below).

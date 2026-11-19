@@ -62,9 +62,8 @@ export_ctf_table <- function(base_unit, comparison_units,
 
 #' Raw source-value export for the base country
 #'
-#' `cgjr_raw` is country-grain only and on each provider's native scale, so
-#' this ignores `comparison_units` that are regions / income groups and never
-#' aggregates.
+#' `cgjr_raw` holds observed values for real countries only, each on its
+#' provider's native scale, so this never aggregates.
 #'
 #' @inheritParams export_ctf_table
 #' @param raw,taxonomy Data overrides for tests.
@@ -75,10 +74,7 @@ export_raw_table <- function(base_unit, comparison_units = character(0),
                              raw = cgjrdata::cgjr_raw,
                              taxonomy = cgjrdata::cgjr_taxonomy) {
   units <- unique(c(base_unit, comparison_units))
-  # cgjr_raw is country-grain; it also carries phantom region-code rows
-  # (unit_level "country", NA unit_name, NA value) - drop those.
-  out <- dplyr::filter(raw, .data$unit_code %in% units,
-                       .data$unit_level == "country", !is.na(.data$unit_name))
+  out <- dplyr::filter(raw, .data$unit_code %in% units)
   if (!is.null(year_range)) {
     rng <- range(year_range, na.rm = TRUE)
     out <- dplyr::filter(out, .data$year >= rng[[1]], .data$year <= rng[[2]])

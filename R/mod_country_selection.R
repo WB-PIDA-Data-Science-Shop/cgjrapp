@@ -34,27 +34,21 @@
 # mod_benchmark_dashboard_server() consumes.
 # ---
 
-# ISO codes of real countries. cgjr_ctf tags 17 World Bank aggregates (AFE,
-# AFW, EAS, HIC, NAC, ...) as unit_level == "country"; cliaretl::wb_country_list
-# lists each aggregate under `group_code`, so its distinct `country_code`s are
-# actual countries only.
-.country_codes <- function(wb_list = cliaretl::wb_country_list) {
-  unique(wb_list$country_code)
+# ISO3 codes of real countries. cgjrdata ships country rows only, and
+# wbcountries lists no World Bank aggregates.
+.country_codes <- function(wb = cgjrdata::wbcountries) {
+  wb$country_code
 }
 
-# grouped picker choices: names = unit_name, values = unit_code
+# grouped picker choices: names = display name, values = what
+# .expand_to_countries() takes (ISO3 code / region_code / income-group label)
 .unit_choices <- function(ctf = cgjrdata::cgjr_ctf) {
-  u <- dplyr::distinct(ctf, .data$unit_level, .data$unit_code, .data$unit_name)
-  real <- .country_codes()
-  mk <- function(lvl) {
-    x <- u[u$unit_level == lvl & (lvl != "country" | u$unit_code %in% real), ]
-    x <- x[order(x$unit_name), ]
-    stats::setNames(x$unit_code, x$unit_name)
-  }
+  u <- dplyr::distinct(ctf, .data$unit_code, .data$unit_name)
+  u <- u[order(u$unit_name), ]
   list(
-    Countries       = mk("country"),
-    Regions         = mk("region"),
-    `Income groups` = mk("income_group")
+    Countries       = stats::setNames(u$unit_code, u$unit_name),
+    Regions         = get_region_choices(),
+    `Income groups` = get_income_choices()
   )
 }
 
@@ -89,50 +83,37 @@
   setdiff(wb$country_code[!is.na(wb$region_code) & wb$region_code == reg[[1]]], base_iso)
 }
 
-# Expand any region / income-group unit_codes in `codes` into their member
-# country codes; country codes pass through unchanged. A group is always a
+# Expand any region code or income-group label in `codes` into its member
+# countries; country codes pass through unchanged. A group is always a
 # shortcut, never a comparator unit in its own right (cliarappak parity: its
 # `groups` picker only ever pre-checks `countries`, and `def_quantiles()` is
 # always fed individual countries). Selecting several groups unions their
 # members, matching cliarappak's own "union of the groups" semantics.
-#
-# Region unit_codes in cgjr_ctf equal wbcountries$region_code verbatim
-# (e.g. "AFE"); income-group unit_codes are a slug ("high_income") that only
-# matches wbcountries$income_group via the display label ("High income"), so
-# income groups are matched on unit_name, not unit_code.
-.expand_to_countries <- function(codes, ctf = cgjrdata::cgjr_ctf,
-                                 wb = cgjrdata::wbcountries) {
+.expand_to_countries <- function(codes, wb = cgjrdata::wbcountries) {
   codes <- unique(codes)
-  if (length(codes) == 0L) return(character(0))
-
-  u <- dplyr::distinct(ctf, .data$unit_level, .data$unit_code, .data$unit_name)
-  u <- u[u$unit_code %in% codes, ]
-
-  # WB aggregates (AFE, NAC, HIC, ...) leak into cgjr_ctf as "country" rows;
-  # only codes in .country_codes() are real countries. AFE/AFW/NAC also have a
-  # genuine region row, which is resolved below.
-  country_codes <- u$unit_code[u$unit_level == "country" & u$unit_code %in% .country_codes()]
-  region_codes  <- u$unit_code[u$unit_level == "region"]
-  income_labels <- u$unit_name[u$unit_level == "income_group"]
-
   unique(c(
-    country_codes,
-    wb$country_code[!is.na(wb$region_code) & wb$region_code %in% region_codes],
-    wb$country_code[!is.na(wb$income_group) & wb$income_group %in% income_labels]
+    intersect(codes, wb$country_code),
+    wb$country_code[wb$region_code %in% codes],
+    wb$country_code[wb$income_group %in% codes]
   ))
+}
+
+# Years the dynamic CTF panel covers: the year slider's bounds and the
+# default applied range
+.year_bounds <- function(ctf = cgjrdata::cgjr_ctf) {
+  as.integer(range(ctf$year[ctf$ctf_type == "dynamic"], na.rm = TRUE))
 }
 
 .SELECTION_FIELDS <- c("base", "comparators", "threshold", "year_range")
 # cliarappak's report-button style
 .DOWNLOAD_STYLE <- "width:100%; background-color: #204d74; color: white"
-.YEAR_MIN <- 2013L
-.YEAR_MAX <- 2024L
 
 #' Country / comparator selection page UI
 #'
 #' @param id Module id.
 #' @param default_base Character `unit_code` to pre-select as the base unit.
-#' @param ctf Long CTF tibble the picker choices are built from.
+#' @param ctf Long CTF tibble the country picker and the year slider's bounds
+#'   are built from.
 #' @param taxonomy `cgjrdata::cgjr_taxonomy` - the Downloads card's cluster
 #'   picker.
 #' @return A `shiny::tagList` - the content of the `"selection"`
@@ -143,6 +124,7 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
                                      taxonomy = cgjrdata::cgjr_taxonomy) {
   ns <- shiny::NS(id)
   choices <- .unit_choices(ctf)
+  years <- .year_bounds(ctf)
   tx <- as.data.frame(taxonomy)
   tx <- tx[order(tx$cluster_num), ]
   cluster_choices <- stats::setNames(unique(tx$cluster), unique(tx$cluster_name))
@@ -222,7 +204,7 @@ mod_country_selection_ui <- function(id, default_base = "GHA",
           width = 6,
           shiny::sliderInput(
             ns("year_range"), "Year range (dynamic view, even years only)",
-            min = .YEAR_MIN, max = .YEAR_MAX, value = c(.YEAR_MIN, .YEAR_MAX),
+            min = years[[1]], max = years[[2]], value = years,
             step = 1L, sep = ""
           )
         )
@@ -321,7 +303,7 @@ mod_country_selection_server <- function(id, default_base = "GHA") {
       base_unit        = default_base,
       comparison_units = .default_comparators(default_base),
       threshold        = "Default",
-      year_range       = c(.YEAR_MIN, .YEAR_MAX)
+      year_range       = .year_bounds()
     )
     shiny::observeEvent(input$apply, {
       applied_state$base_unit        <- input$base

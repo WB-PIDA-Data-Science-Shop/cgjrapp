@@ -19,9 +19,9 @@ filter_unit_data(
 
 \item{ctf_type}{One of \code{"dynamic"} or \code{"static"}.}
 
-\item{units}{Character vector of \code{unit_code}s (ISO3 for countries, WB
-\code{region_code} such as \code{"AFE"}, or an income-group slug such as
-\code{"high_income"}). Countries, regions and income groups are equal citizens.}
+\item{units}{Character vector of country \code{unit_code}s (ISO3). \code{cgjr_ctf}
+holds countries only; expand a region or income group to its member
+countries first.}
 
 \item{year_range}{Optional integer vector; its \code{range()} bounds the \code{year}
 column. Ignored when \code{ctf_type == "static"} (static rows carry \code{year = NA}).}
@@ -36,8 +36,8 @@ overridable for tests.}
 \value{
 A tibble with the columns of \code{cgjr_ctf}
 (\code{unit_level}, \code{unit_code}, \code{unit_name}, \code{year}, \code{ctf_type}, \code{cluster},
-\code{subcluster}, \code{sub_subcluster}, \code{leaf}, \code{indicator}, \code{variable}, \code{ctf},
-\code{n_inputs}, \code{n_inputs_obs}), filtered to the requested slice. Row order is
+\code{subcluster}, \code{sub_subcluster}, \code{leaf}, \code{indicator}, \code{variable}, \code{ctf}),
+filtered to the requested slice. Row order is
 preserved from \code{cgjr_ctf}.
 }
 \description{

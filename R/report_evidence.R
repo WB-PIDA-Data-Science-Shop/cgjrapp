@@ -92,7 +92,8 @@
 #'   needs a single focal unit).
 #' @param comparison_units Character vector of comparison `unit_code`s.
 #' @param threshold `"Default"` or `"Terciles"`.
-#' @param year_range Integer length-2 vector for the dynamic view.
+#' @param year_range Integer length-2 vector for the dynamic view. Defaults to
+#'   every year of the dynamic CTF panel.
 #' @param clusters Cluster keys to report on (`NULL` = all). The Overview
 #'   always covers every cluster.
 #' @param taxonomy `cgjrdata::cgjr_taxonomy`.
@@ -106,7 +107,7 @@
 #' @export
 build_evidence <- function(base_unit, comparison_units,
                            threshold = c("Default", "Terciles"),
-                           year_range = c(2013L, 2024L), clusters = NULL,
+                           year_range = .year_bounds(), clusters = NULL,
                            taxonomy = cgjrdata::cgjr_taxonomy) {
   threshold <- match.arg(threshold)
   stopifnot(

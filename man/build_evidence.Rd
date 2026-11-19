@@ -8,7 +8,7 @@ build_evidence(
   base_unit,
   comparison_units,
   threshold = c("Default", "Terciles"),
-  year_range = c(2013L, 2024L),
+  year_range = .year_bounds(),
   clusters = NULL,
   taxonomy = cgjrdata::cgjr_taxonomy
 )
@@ -21,7 +21,8 @@ needs a single focal unit).}
 
 \item{threshold}{\code{"Default"} or \code{"Terciles"}.}
 
-\item{year_range}{Integer length-2 vector for the dynamic view.}
+\item{year_range}{Integer length-2 vector for the dynamic view. Defaults to
+every year of the dynamic CTF panel.}
 
 \item{clusters}{Cluster keys to report on (\code{NULL} = all). The Overview
 always covers every cluster.}

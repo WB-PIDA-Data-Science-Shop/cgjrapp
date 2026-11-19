@@ -34,12 +34,6 @@ test_that("get_region_choices returns the 8 WB region codes", {
   )
 })
 
-test_that("get_region_choices codes match the region rows in cgjr_ctf", {
-  region_codes <- unname(get_region_choices())
-  ctf_regions  <- unique(cgjrdata::cgjr_ctf$unit_code[cgjrdata::cgjr_ctf$unit_level == "region"])
-  expect_setequal(region_codes, ctf_regions)
-})
-
 # -- get_income_choices() ---
 
 test_that("get_income_choices returns the 4 WB income groups, no NA", {

@@ -171,19 +171,25 @@ test_that("the structured format is the default, with its three subheadings and 
   expect_false(any(startsWith(p$sections$key, "questions_")))
 })
 
+# Ghana's priority areas in the dashboard's order, as (cluster, leaf) - taken
+# from the evidence, so these tests check the rule, not one data vintage
+# (cliaretl 0.2.5 moved Social Cohesion from just above the comparator
+# median to just below it, reshuffling the order).
+TX <- as.data.frame(cgjrdata::cgjr_taxonomy)
+TX$leaf  <- dplyr::coalesce(TX$sub_subcluster, TX$subcluster)
+TX$title <- dplyr::coalesce(TX$sub_subcluster_name, TX$subcluster_name)
+PRIO <- TX[match(priority_areas(AI_EV)$name, TX$title), c("cluster", "leaf")]
+
 test_that("narrative: the top three priority areas get full depth, others a paragraph, gaps a line", {
-  # Ghana's priority order: Degree of Integrity, Transparency and Accountability,
-  # Public Sector HRM, then Justice and Rule of Law ...
-  for (k in c("degree_of_integrity", "transparency_and_accountability")) {
-    expect_match(section_line(NARR, "institutional_environment", k), "PRIORITY AREA", fixed = TRUE)
+  for (i in 1:3) {
+    expect_match(section_line(NARR, PRIO$cluster[i], PRIO$leaf[i]), "PRIORITY AREA", fixed = TRUE)
   }
-  expect_match(section_line(NARR, "core_governance_functions", "public_sector_hrm"), "PRIORITY AREA", fixed = TRUE)
-  short <- section_line(NARR, "institutional_environment", "justice_and_rule_of_law")
-  expect_match(short, "one paragraph", fixed = TRUE)
-  expect_false(grepl("PRIORITY AREA", short, fixed = TRUE))
+  fourth <- section_line(NARR, PRIO$cluster[4], PRIO$leaf[4])
+  expect_match(fourth, "one paragraph", fixed = TRUE)
+  expect_false(grepl("PRIORITY AREA", fourth, fixed = TRUE))
+  expect_false(grepl("####", fourth, fixed = TRUE))
   expect_match(section_line(NARR, "beyond_core_governance_functions", "soe_governance"),
                "NOT YET MEASURED", fixed = TRUE)
-  expect_false(grepl("####", section_line(NARR, "core_governance_functions", "public_sector_hrm"), fixed = TRUE))
 })
 
 test_that("narrative: a one-section report treats its section as a priority", {
@@ -192,10 +198,12 @@ test_that("narrative: a one-section report treats its section as a priority", {
 })
 
 test_that("narrative: a call with a priority area gets the guidance's possible recommendations", {
-  expect_match(call_of(NARR, "institutional_environment")$prompt$user, "[G5-1]", fixed = TRUE)
-  expect_false(grepl("[G5-1]", call_of(NARR, "context")$prompt$user, fixed = TRUE))  # no priority area
+  with_prio    <- PRIO$cluster[1]
+  without_prio <- setdiff(AI_EV$meta$clusters, PRIO$cluster[1:3])[1]  # 4 clusters, 3 priorities
+  expect_match(call_of(NARR, with_prio)$prompt$user, "[G5-1]", fixed = TRUE)
+  expect_false(grepl("[G5-1]", call_of(NARR, without_prio)$prompt$user, fixed = TRUE))
   structured <- plan_ai_report(AI_EV, AI_G, "chapter")
-  expect_false(grepl("[G5-1]", call_of(structured, "institutional_environment")$prompt$user, fixed = TRUE))
+  expect_false(grepl("[G5-1]", call_of(structured, with_prio)$prompt$user, fixed = TRUE))
 })
 
 test_that("narrative: every section's questions come under their own marker, gathered at the end", {

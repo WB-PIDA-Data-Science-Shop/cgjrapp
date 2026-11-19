@@ -20,9 +20,9 @@
 #' @param leaf `NULL` (every leaf) or a character vector of leaf keys
 #'   (`dplyr::coalesce(sub_subcluster, subcluster)` from `cgjr_taxonomy`).
 #' @param ctf_type One of `"dynamic"` or `"static"`.
-#' @param units Character vector of `unit_code`s (ISO3 for countries, WB
-#'   `region_code` such as `"AFE"`, or an income-group slug such as
-#'   `"high_income"`). Countries, regions and income groups are equal citizens.
+#' @param units Character vector of country `unit_code`s (ISO3). `cgjr_ctf`
+#'   holds countries only; expand a region or income group to its member
+#'   countries first.
 #' @param year_range Optional integer vector; its `range()` bounds the `year`
 #'   column. Ignored when `ctf_type == "static"` (static rows carry `year = NA`).
 #' @param even_years Logical. When `TRUE` (and `ctf_type == "dynamic"`), keep
@@ -33,8 +33,8 @@
 #'
 #' @return A tibble with the columns of `cgjr_ctf`
 #'   (`unit_level`, `unit_code`, `unit_name`, `year`, `ctf_type`, `cluster`,
-#'   `subcluster`, `sub_subcluster`, `leaf`, `indicator`, `variable`, `ctf`,
-#'   `n_inputs`, `n_inputs_obs`), filtered to the requested slice. Row order is
+#'   `subcluster`, `sub_subcluster`, `leaf`, `indicator`, `variable`, `ctf`),
+#'   filtered to the requested slice. Row order is
 #'   preserved from `cgjr_ctf`.
 #'
 #' @seealso [def_quantiles()], [compute_family_average_app()]

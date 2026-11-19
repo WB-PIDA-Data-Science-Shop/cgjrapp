@@ -61,21 +61,12 @@ test_that("an empty (leaf, ctf_type) returns zero rows, not an error", {
   )
 })
 
-test_that("regions and income groups are addressable by unit_code", {
+test_that("cgjr_ctf has no region / income-group / aggregate rows to slice", {
+  # groups are expanded to member countries before filtering (see
+  # .expand_to_countries()); their codes match nothing here
   out <- filter_unit_data("justice_and_rule_of_law", "static",
-                          c("EAP", "high_income"))
-  expect_setequal(unique(out$unit_code), c("EAP", "high_income"))
-  expect_setequal(unique(out$unit_level), c("region", "income_group"))
-})
-
-test_that("KNOWN cgjrdata quirk: AFE/AFW exist at BOTH country and region level", {
-  # cgjrdata's tidy cgjr_ctf carries "Africa Eastern and Southern" / "...Western
-  # and Central" as unit_level == "country" rows in addition to the real region
-  # rows, so unit_code is not unique across unit_level. filter_unit_data() by
-  # unit_code alone therefore returns both. Flagged for the cgjrdata team;
-  # Slice 3's unit picker will need to disambiguate on (unit_level, unit_code).
-  out <- filter_unit_data("justice_and_rule_of_law", "static", "AFE")
-  expect_setequal(unique(out$unit_level), c("country", "region"))
+                          c("AFE", "EAP", "HIC", "High income"))
+  expect_identical(nrow(out), 0L)
 })
 
 test_that("leaf accepts a vector - several leaves in one call", {

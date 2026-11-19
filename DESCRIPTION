@@ -17,7 +17,6 @@ Imports:
     bs4Dash,
     cachem,
     cgjrdata,
-    cliaretl,
     commonmark,
     countrycode,
     coro,

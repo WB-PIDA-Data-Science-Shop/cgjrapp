@@ -8,10 +8,7 @@
 overall_fixture <- function(want_cluster, want_type, base = "KEN", n_comp = 30L) {
   slice <- cgjrdata::cgjr_ctf |>
     dplyr::filter(.data$cluster == .env$want_cluster,
-                  .data$ctf_type == .env$want_type,
-                  .data$unit_level == "country",
-                  # real countries only, not the WB aggregates in cgjr_ctf
-                  .data$unit_code %in% cgjrapp:::.country_codes())
+                  .data$ctf_type == .env$want_type)
   codes <- sort(unique(slice$unit_code))
   comps <- setdiff(codes, base)[seq_len(n_comp)]
   slice <- dplyr::filter(slice, .data$unit_code %in% c(base, comps))

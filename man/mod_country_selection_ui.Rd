@@ -16,7 +16,8 @@ mod_country_selection_ui(
 
 \item{default_base}{Character \code{unit_code} to pre-select as the base unit.}
 
-\item{ctf}{Long CTF tibble the picker choices are built from.}
+\item{ctf}{Long CTF tibble the country picker and the year slider's bounds
+are built from.}
 
 \item{taxonomy}{\code{cgjrdata::cgjr_taxonomy} - the Downloads card's cluster
 picker.}

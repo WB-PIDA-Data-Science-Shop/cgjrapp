@@ -23,7 +23,6 @@ export_raw_table(
 A tibble, one row per country x indicator x year.
 }
 \description{
-\code{cgjr_raw} is country-grain only and on each provider's native scale, so
-this ignores \code{comparison_units} that are regions / income groups and never
-aggregates.
+\code{cgjr_raw} holds observed values for real countries only, each on its
+provider's native scale, so this never aggregates.
 }
